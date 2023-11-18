@@ -8,6 +8,7 @@
 
 typedef enum {
     STR_EXPR,
+    VAR_EXPR,
     FUN_CALL,
 } Expr_Kind;
 
@@ -15,7 +16,9 @@ typedef struct Expr Expr;
 
 typedef struct Fun_Call {
     std::string name = "";
-    std::vector<Expr> exprs = {};
+    std::vector<Expr> args = {};
+public:
+    void print() const;
 } Fun_Call;
 
 typedef struct {
@@ -26,6 +29,8 @@ typedef struct {
 struct Expr {
     Expr_Kind kind;
     Expr_Val val = {};
+public:
+    void print() const;
 };
 
 Expr parse_fun_call(Lexer *lexer);

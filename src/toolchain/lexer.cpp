@@ -7,7 +7,7 @@
 #include "lexer.hpp"
 
 std::vector<std::string> DEFAULT_TOKEN_STRS = {
-    "fun", "(", ")", "{", ";", "}"
+    "fun", "(", ")", "{", ";", "}", ",",
 };
 
 std::unordered_map<Lexeme_Kind, std::string> lexeme_kind_str_map = {
@@ -18,6 +18,7 @@ std::unordered_map<Lexeme_Kind, std::string> lexeme_kind_str_map = {
     {CLOSE_CURLY, "CLOSE_CURLY"},
     {STR_LIT, "STR_LIT"},
     {SEMI, "SEMI"},
+    {COMMA, "COMMA"},
 };
 
 std::unordered_map<std::string, Lexeme_Kind> str_lexeme_kind_map = {
@@ -27,6 +28,7 @@ std::unordered_map<std::string, Lexeme_Kind> str_lexeme_kind_map = {
     {"{", OPEN_CURLY},
     {"}", CLOSE_CURLY},
     {";", SEMI},
+    {",", COMMA},
 };
 
 int strip_front(std::string *str) {
@@ -212,4 +214,9 @@ void Lexer::assert_lexeme_front(const Lexeme_Kind kind) const {
 void Lexer::del_front() {
     this->assert_lexeme_front();
     this->lexemes.erase(this->lexemes.begin());
+}
+
+Lexeme Lexer::front() const {
+    this->assert_lexeme_front();
+    return this->lexemes[0];
 }

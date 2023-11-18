@@ -13,6 +13,7 @@ typedef enum {
     OPEN_CURLY,
     CLOSE_CURLY,
     STR_LIT,
+    COMMA,
     SEMI
 } Lexeme_Kind;
 
@@ -45,6 +46,7 @@ public:
     void assert_lexeme_front(const std::string) const;
     void assert_lexeme_front(const Lexeme_Kind) const;
     void del_front();
+    Lexeme front() const;
 } Lexer;
 
 #endif // KAPPA_LEXER_HPP_
