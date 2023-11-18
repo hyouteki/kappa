@@ -16,7 +16,7 @@ typedef struct Expr Expr;
 
 typedef struct Fun_Call {
     std::string name = "";
-    std::vector<Expr> args;
+    std::vector<Expr> args = {};
 public:
     Fun_Call();
     Fun_Call(Lexer *lexer);
@@ -48,6 +48,7 @@ public:
     void print() const;
 } Fun;
 
+Expr iter_args(Lexer* lexer);
 bool is_fun_call(const Lexer* lexer);
 Fun_Call parse_fun_call(Lexer* lexer);
 void parse_lexer(Lexer *lexer);
