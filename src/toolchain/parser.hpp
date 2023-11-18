@@ -8,8 +8,8 @@
 
 typedef enum {
     STR_EXPR,
-    VAR_EXPR,
     FUN_CALL,
+    ANY_EXPR,
 } Expr_Kind;
 
 typedef struct Expr Expr;
@@ -33,6 +33,18 @@ public:
     void print() const;
 };
 
-Expr parse_fun_call(Lexer *lexer);
+typedef struct Stmt {
+    std::vector<Expr> stmt;
+} Stmt;
+
+typedef struct Fun {
+    std::string name;
+    std::vector<Expr> args;
+    std::vector<Stmt> block;
+public:
+    void print() const;
+} Fun;
+
+Fun parse_fun_def(Lexer *lexer);
 
 #endif // KAPPA_PARSER_HPP_

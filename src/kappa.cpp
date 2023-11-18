@@ -32,8 +32,8 @@ int main(int argc, char* argv[]) {
     for (Lexeme lexeme: lexer.lexemes) {
         lexeme.print(); std::cout << std::endl;
     }
-    Expr fun_call = parse_fun_call(&lexer);
-    fun_call.print(); std::cout << std::endl;
+    Fun fun = parse_fun_def(&lexer);
+    fun.print(); std::cout << std::endl;
     return 0;
 }
 

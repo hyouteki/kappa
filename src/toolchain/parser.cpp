@@ -8,7 +8,7 @@
 
 void Expr::print() const {
     switch (this->kind) {
-        case VAR_EXPR:
+        case ANY_EXPR:
         case STR_EXPR:
             std::cout << this->val.str_val;
             break;
@@ -29,19 +29,28 @@ void Fun_Call::print() const {
     std::cout << ")";
 }
 
-Expr parse_fun_call(Lexer *lexer) {
+void Fun::print() const {
+    std::cout << this->name << "(";
+    for (size_t i = 0; i < this->args.size(); ++i) {
+        this->args[i].print();
+        if (i < this->args.size()-1) std::cout << ", ";
+    }
+    std::cout << ")";
+}
+
+Fun parse_fun_def(Lexer *lexer) {
     lexer->assert_lexeme_front("fun");
     lexer->del_front();
     lexer->assert_lexeme_front(NAME);
-    Fun_Call fun_call;
-    fun_call.name = lexer->front().str;
+    Fun* fun = new Fun();
+    fun->name = lexer->front().str;
     lexer->del_front();
     lexer->assert_lexeme_front(OPEN_PAREN);
     lexer->del_front();
     while (!lexer->front().equal(CLOSE_PAREN)) {
         lexer->assert_lexeme_front(NAME);
-        fun_call.args.push_back((Expr){
-            .kind = VAR_EXPR,
+        fun->args.push_back((Expr){
+            .kind = ANY_EXPR,
             .val = (Expr_Val){.str_val = lexer->front().str}
         });
         lexer->del_front();
@@ -49,9 +58,5 @@ Expr parse_fun_call(Lexer *lexer) {
         lexer->assert_lexeme_front(COMMA);
         lexer->del_front();
     }
-    Expr* expr = new Expr();
-    expr->kind = FUN_CALL;
-    expr->val.fun_call.name = fun_call.name;
-    expr->val.fun_call.args = fun_call.args;
-    return *expr;
+    return *fun;
 }

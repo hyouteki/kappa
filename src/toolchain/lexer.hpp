@@ -40,13 +40,13 @@ typedef struct Lexer {
     std::string filename;
     std::vector<Lexeme> lexemes = {};
 public:
+    void del_front();
+    Lexeme front() const;
     void gen_lexemes();
     void assert_lexeme_front() const;
     void assert_lexeme_front(const Lexeme) const;
     void assert_lexeme_front(const std::string) const;
     void assert_lexeme_front(const Lexeme_Kind) const;
-    void del_front();
-    Lexeme front() const;
 } Lexer;
 
 #endif // KAPPA_LEXER_HPP_
