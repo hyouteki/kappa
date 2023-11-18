@@ -26,7 +26,7 @@ public:
 
 typedef struct Lexeme {
     Lexeme_Kind kind;
-    std::string str;
+    std::string str = "";
     Location loc = {};
 public:
     void print() const;
@@ -40,6 +40,9 @@ typedef struct Lexer {
     std::string filename;
     std::vector<Lexeme> lexemes = {};
 public:
+    bool empty() const;
+    size_t size() const;
+    Lexeme at(size_t) const;
     void del_front();
     Lexeme front() const;
     void gen_lexemes();
@@ -47,6 +50,8 @@ public:
     void assert_lexeme_front(const Lexeme) const;
     void assert_lexeme_front(const std::string) const;
     void assert_lexeme_front(const Lexeme_Kind) const;
+    void assert_lexeme_front(const std::vector<Lexeme_Kind>) const;
+    bool is_lexeme_front(const std::vector<Lexeme_Kind>) const;
 } Lexer;
 
 #endif // KAPPA_LEXER_HPP_

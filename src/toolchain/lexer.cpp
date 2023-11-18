@@ -84,6 +84,18 @@ bool Lexeme::equal(const Lexeme_Kind kind) const {
     return this->kind == kind;
 }
 
+bool Lexer::empty() const {
+    return this->lexemes.empty();
+}
+
+size_t Lexer::size() const {
+    return this->lexemes.size();
+}
+
+Lexeme Lexer::at(size_t i) const {
+    return this->lexemes[i];
+}
+
 void Lexer::del_front() {
     this->assert_lexeme_front();
     this->lexemes.erase(this->lexemes.begin());
@@ -166,7 +178,7 @@ void Lexer::gen_lexemes() {
 }
 
 void Lexer::assert_lexeme_front() const {
-    if (this->lexemes.empty()) {
+    if (this->empty()) {
         std::cerr << this->filename;
         std::cerr << ": ERROR: Expected token; Got nothing";
         exit(1);
@@ -174,7 +186,7 @@ void Lexer::assert_lexeme_front() const {
 }
 
 void Lexer::assert_lexeme_front(const Lexeme lexeme) const {
-    if (this->lexemes.empty()) {
+    if (this->empty()) {
         std::cerr << this->filename << ": ERROR: Expected token '";
         std::cerr << lexeme.str << "'; Got nothing";
         exit(1);
@@ -189,7 +201,7 @@ void Lexer::assert_lexeme_front(const Lexeme lexeme) const {
 }
 
 void Lexer::assert_lexeme_front(const std::string name) const {
-    if (this->lexemes.empty()) {
+    if (this->empty()) {
         std::cerr << this->filename << ": ERROR: Expected token '";
         std::cerr << name << "'; Got nothing";
         exit(1);
@@ -204,7 +216,7 @@ void Lexer::assert_lexeme_front(const std::string name) const {
 }
 
 void Lexer::assert_lexeme_front(const Lexeme_Kind kind) const {
-    if (this->lexemes.empty()) {
+    if (this->empty()) {
         std::cerr << this->filename << ": ERROR: Expected token of kind '";
         std::cerr << lexeme_kind_str_map.at(kind) << "'; Got nothing";
         exit(1);
@@ -219,4 +231,31 @@ void Lexer::assert_lexeme_front(const Lexeme_Kind kind) const {
         std::cerr << "'" << std::endl;
         exit(1);
     }
+}
+
+void Lexer::assert_lexeme_front(const std::vector<Lexeme_Kind> kinds) const {
+    if (this->size() < kinds.size()) {
+        std::cerr << this->filename << ": ERROR: Expected Token_Kind array size '";
+        std::cerr << kinds.size() << "'; Got '" << this->size() << "'";
+        exit(1);
+    }
+    for (size_t i = 0; i < this->size(); ++i) {
+        if (!this->at(i).equal(kinds[i])) {
+            std::cerr << this->filename << ":";
+            this->at(i).loc.print();
+            std::cerr << ": ERROR: Expected token of kind '";
+            std::cerr << lexeme_kind_str_map.at(kinds[i]) << "'; Got token '";
+            std::cerr << this->at(i).str << "' of kind '";
+            std::cerr << lexeme_kind_str_map.at(this->at(i).kind);
+            std::cerr << "'" << std::endl;
+            exit(1);
+        }
+    }
+}
+
+bool Lexer::is_lexeme_front(const std::vector<Lexeme_Kind> kinds) const {
+    if (this->size() < kinds.size()) return false;
+    for (size_t i = 0; i < kinds.size(); ++i)
+        if (!this->at(i).equal(kinds[i])) return false;
+    return true;
 }

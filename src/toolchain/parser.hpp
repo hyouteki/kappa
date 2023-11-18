@@ -16,8 +16,10 @@ typedef struct Expr Expr;
 
 typedef struct Fun_Call {
     std::string name = "";
-    std::vector<Expr> args = {};
+    std::vector<Expr> args;
 public:
+    Fun_Call();
+    Fun_Call(Lexer *lexer);
     void print() const;
 } Fun_Call;
 
@@ -28,7 +30,7 @@ typedef struct {
 
 struct Expr {
     Expr_Kind kind;
-    Expr_Val val = {};
+    Expr_Val val;
 public:
     void print() const;
 };
@@ -42,9 +44,12 @@ typedef struct Fun {
     std::vector<Expr> args;
     std::vector<Stmt> block;
 public:
+    Fun(Lexer *lexer);
     void print() const;
 } Fun;
 
-Fun parse_fun_def(Lexer *lexer);
+bool is_fun_call(const Lexer* lexer);
+Fun_Call parse_fun_call(Lexer* lexer);
+void parse_lexer(Lexer *lexer);
 
 #endif // KAPPA_PARSER_HPP_

@@ -3,8 +3,11 @@
 #include <string>
 #include <vector>
 #include <iostream>
+#include <unordered_set>
 #include "lexer.hpp"
 #include "parser.hpp"
+
+std::unordered_set<std::string> reserved_strs = {"fun"};
 
 void Expr::print() const {
     switch (this->kind) {
@@ -20,6 +23,14 @@ void Expr::print() const {
     }
 }
 
+Fun_Call::Fun_Call() {}
+
+Fun_Call::Fun_Call(Lexer* lexer) {
+    this->name = lexer->front().str;
+    lexer->del_front();
+    lexer->del_front();
+}
+
 void Fun_Call::print() const {
     std::cout << this->name << "(";
     for (size_t i = 0; i < this->args.size(); ++i) {
@@ -30,26 +41,41 @@ void Fun_Call::print() const {
 }
 
 void Fun::print() const {
-    std::cout << this->name << "(";
+    std::cout << "fun " << this->name << "(";
     for (size_t i = 0; i < this->args.size(); ++i) {
         this->args[i].print();
         if (i < this->args.size()-1) std::cout << ", ";
     }
-    std::cout << ")";
+    std::cout << ") {}";
 }
 
-Fun parse_fun_def(Lexer *lexer) {
+bool is_fun_call(const Lexer* lexer) {
+    std::vector<Lexeme_Kind> regex = {NAME, OPEN_PAREN};
+    return lexer->is_lexeme_front(regex);
+}
+
+void iter_lexer(Lexer* lexer) {
+    if (lexer->front().equal("fun")) Fun fun = Fun(lexer);
+    else if (is_fun_call(lexer))
+        Fun_Call fun_call = Fun_Call(lexer);
+    else {
+        std::cerr << lexer->filename << ":"; lexer->front().loc.print();
+        std::cerr << ": ERROR: Invalid token '" << lexer->front().str << "'" << std::endl;
+        exit(1);
+    }
+}
+
+Fun::Fun(Lexer *lexer) {
     lexer->assert_lexeme_front("fun");
     lexer->del_front();
     lexer->assert_lexeme_front(NAME);
-    Fun* fun = new Fun();
-    fun->name = lexer->front().str;
+    this->name = lexer->front().str;
     lexer->del_front();
     lexer->assert_lexeme_front(OPEN_PAREN);
     lexer->del_front();
     while (!lexer->front().equal(CLOSE_PAREN)) {
         lexer->assert_lexeme_front(NAME);
-        fun->args.push_back((Expr){
+        this->args.push_back((Expr){
             .kind = ANY_EXPR,
             .val = (Expr_Val){.str_val = lexer->front().str}
         });
@@ -58,5 +84,15 @@ Fun parse_fun_def(Lexer *lexer) {
         lexer->assert_lexeme_front(COMMA);
         lexer->del_front();
     }
-    return *fun;
+    lexer->del_front();
+    lexer->assert_lexeme_front(OPEN_CURLY);
+    lexer->del_front();
+    while (!lexer->front().equal(CLOSE_CURLY)) {
+        iter_lexer(lexer);
+        break;
+    }
+}
+
+void parse_lexer(Lexer *lexer) {
+    while (!lexer->empty()) iter_lexer(lexer);
 }

@@ -1,9 +1,11 @@
 MAKEFLAGS += --no-print-directory
 
+CC = g++
+CFLAGS = -Wall -Wextra -std=c++17
 dependencies := src/toolchain/lexer.cpp src/toolchain/parser.cpp
 
 build:
-	@g++ -Wall -Wextra -std=c++17 src/kappa.cpp $(dependencies) -o bin/kappa
+	@$(CC) $(CFLAGS) src/kappa.cpp $(dependencies) -o bin/kappa
 
 kappa: $(filter-out $@,$(MAKECMDGOALS))
 	@./bin/kappa $<
