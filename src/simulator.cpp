@@ -19,6 +19,27 @@ void simul_stmt(const Stmt stmt) {
             }
             sign_fun_map[stmt.val.fun.name] = stmt.val.fun;
         } break;
+        case Stmt::IF: {
+            If if_cond = stmt.val.if_cond;
+            Stmt* condition = if_cond.condition;
+            if (condition->kind != Stmt::EXPR) {
+                std::cerr << "ERROR: Invalid condition" << std::endl;
+                exit(1);
+            }
+            Expr expr = condition->val.expr;
+            switch (expr.kind) {
+                case Expr::BOOL:
+                    if (expr.val.bool_val) simul(if_cond.then_block);
+                    else simul(if_cond.else_block);
+                    break;
+                case Expr::FUN_CALL:
+                    std::cerr << "TODO: Expr_Kind = FUN_CALL not ";
+                    std::cerr << "implemented as a condition" << std::endl;
+                    exit(1);
+                default:
+                    simul(if_cond.then_block);
+            }
+        } break;
         case Stmt::EXPR: {
             if (stmt.val.expr.kind == Expr::FUN_CALL) {
                 if (!mapper(stmt.val.expr.val.fun_call)) {

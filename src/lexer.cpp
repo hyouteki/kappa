@@ -7,7 +7,8 @@
 #include "lexer.hpp"
 
 std::vector<std::string> DEFAULT_TOKEN_STRS = {
-    "fun", "(", ")", "{", ";", "}", ",",
+    "fun", "if", "else", "true", "false", "var", "int", "while",
+    "(", ")", "{", ";", "}", ",",
 };
 
 std::unordered_map<Lexeme_Kind, std::string> lexeme_kind_str_map = {
@@ -23,6 +24,13 @@ std::unordered_map<Lexeme_Kind, std::string> lexeme_kind_str_map = {
 
 std::unordered_map<std::string, Lexeme_Kind> str_lexeme_kind_map = {
     {"fun", NAME},
+    {"if", NAME},
+    {"else", NAME},
+    {"true", NAME},
+    {"false", NAME},
+    {"var", NAME},
+    {"int", NAME},
+    {"while", NAME},
     {"(", OPEN_PAREN},
     {")", CLOSE_PAREN},
     {"{", OPEN_CURLY},
@@ -290,4 +298,9 @@ bool Lexer::is_lexeme_front(const std::vector<Lexeme_Kind> kinds) const {
     for (size_t i = 0; i < kinds.size(); ++i)
         if (!this->at(i).equal(kinds[i])) return false;
     return true;
+}
+
+
+bool Lexer::is_lexeme_front(const std::string str) const {
+    return !this->empty() && this->front().equal(str);
 }

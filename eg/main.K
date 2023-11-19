@@ -1,6 +1,10 @@
 fun main(argc, argv) {
-    print("Hello moto\n");
+    if (true) {
+        print("Hello moto\n");
+    } else {
+        print("Hey there\n");
+    }
 }
-print("Hello moto\n");
-print("Hello moto\n");
+print("If start\n");
 main();
+print("If end\n");
