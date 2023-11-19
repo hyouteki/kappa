@@ -5,12 +5,7 @@
 #include <stdlib.h>
 #include <string>
 #include <vector>
-
-typedef enum {
-    STR_EXPR,
-    FUN_CALL,
-    ANY_EXPR,
-} Expr_Kind;
+#include <optional>
 
 typedef struct Expr Expr;
 
@@ -23,34 +18,53 @@ public:
     void print() const;
 } Fun_Call;
 
-typedef struct {
-    std::string str_val = "";
-    Fun_Call fun_call = {};
-} Expr_Val;
-
 struct Expr {
+    typedef enum {
+        STR,
+        FUN_CALL,
+        ANY,
+    } Expr_Kind;
     Expr_Kind kind;
-    Expr_Val val;
+    typedef struct {
+        std::string str_val = "";
+        Fun_Call fun_call = {};
+    } Expr_Val;
+    Expr_Val val = {};
 public:
     void print() const;
 };
 
-typedef struct Stmt {
-    std::vector<Expr> stmt;
-} Stmt;
+typedef struct Stmt Stmt;
 
 typedef struct Fun {
-    std::string name;
-    std::vector<Expr> args;
-    std::vector<Stmt> block;
+    std::string name = "";
+    std::vector<Expr> args = {};
+    std::vector<Stmt> block = {};
 public:
+    Fun() {}
     Fun(Lexer *lexer);
     void print() const;
 } Fun;
 
-Expr iter_args(Lexer* lexer);
-bool is_fun_call(const Lexer* lexer);
-Fun_Call parse_fun_call(Lexer* lexer);
-void parse_lexer(Lexer *lexer);
+struct Stmt {
+    typedef enum {
+        FUN_DEF,
+        EXPR,
+    } Stmt_Kind;
+    Stmt_Kind kind;
+    typedef struct Stmt_Val {
+        Fun fun;
+        Expr expr;
+    } Stmt_Val;
+    Stmt_Val val;
+    Stmt(const Fun);
+    Stmt(const Expr);
+};
+
+std::optional<Stmt> iter_lexer(Lexer*);
+Expr iter_args(Lexer*);
+bool is_fun_call(const Lexer*);
+Fun_Call parse_fun_call(Lexer*);
+std::vector<Stmt> parse_lexer(Lexer*);
 
 #endif // KAPPA_PARSER_HPP_
