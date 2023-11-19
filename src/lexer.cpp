@@ -7,7 +7,7 @@
 #include "lexer.hpp"
 
 std::vector<std::string> DEFAULT_TOKEN_STRS = {
-    "fun", "if", "else", "true", "false", "var", "int", "while",
+    "fun", "if", "else", "true", "false", "var", "int", "while", "return",
     "(", ")", "{", ";", "}", ",",
 };
 
@@ -31,6 +31,7 @@ std::unordered_map<std::string, Lexeme_Kind> str_lexeme_kind_map = {
     {"var", NAME},
     {"int", NAME},
     {"while", NAME},
+    {"return", NAME},
     {"(", OPEN_PAREN},
     {")", CLOSE_PAREN},
     {"{", OPEN_CURLY},

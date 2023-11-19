@@ -19,6 +19,8 @@ bool mapper(Fun_Call fun_call) {
     if (builtins.find(fun_call.name) == builtins.end()) return false;
     if (fun_call.name == "print") print(fun_call);
     else {
+        std::cerr << __FILE__ << ":" << __FUNCTION__ << ":";
+        std::cerr << __LINE__ << std::endl;
         std::cerr << "Invalid buitlin method" << std::endl;
         exit(1);
     }

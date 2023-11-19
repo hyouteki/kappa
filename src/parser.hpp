@@ -42,12 +42,13 @@ public:
 
 typedef struct Fun {
     std::string name = "";
+    std::optional<Expr> return_expr = {};
     std::vector<Expr> args = {};
     std::vector<Stmt> block = {};
 public:
     Fun() {}
     Fun(Lexer*);
-    void execute(const Fun_Call fun_call) const;
+    std::optional<Expr> eval(const Fun_Call fun_call) const;
     std::string sign() const;
     void print() const;
 } Fun;

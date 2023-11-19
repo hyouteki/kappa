@@ -9,7 +9,7 @@
 #include "simulator.hpp"
 
 std::unordered_set<std::string> reserved_strs = {
-    "fun", "if", "else", "true", "false", "var", "int", "while"
+    "fun", "if", "else", "true", "false", "var", "int", "while", "return",
 };
 
 std::string Expr::str() const {
@@ -20,8 +20,10 @@ std::string Expr::str() const {
         case Expr::BOOL:
             return (this->val.bool_val)? "true": "false";
         default:
-            std::cerr << "Cannot `stringify` Expr_Kind '";
+            std::cerr << __FILE__ << ":" << __FUNCTION__ << ":";
+            std::cerr << __LINE__ << std::endl << "ERROR: Cannot stringify Expr_Kind '";
             std::cerr << this->kind << "'" << std::endl;
+            exit(1);
     }
     return "";
 }
@@ -40,7 +42,9 @@ void Expr::print() const {
             this->val.fun_call.print();
             break;
         default:
-            std::cerr << "Invalid Expr_Kind" <<std::endl;
+            std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
+            std::cerr << "ERROR: Invalid Expr_Kind" << std::endl;
+            exit(1);
     }
 }
 
@@ -117,7 +121,8 @@ void Stmt::print() const {
             this->val.if_cond.print();
             break;
         default:
-            std::cerr << "Invalid Stmt_Kind" << std::endl;
+            std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
+            std::cerr << "ERROR: Invalid Stmt_Kind" << std::endl;
             exit(1);
     }
 }
@@ -150,6 +155,7 @@ std::optional<Expr> iter_args(Lexer* lexer, bool error) {
         return *expr;
     }
     if (error) {
+        std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
         std::cerr << lexer->filename << ":"; lexer->front().loc.print();
         std::cerr << ": ERROR: Invalid argument '" << lexer->front().str << "'" << std::endl;
         exit(1);
@@ -200,9 +206,10 @@ void Fun::print() const {
     std::cout << ") {}";
 }
 
-void Fun::execute(const Fun_Call fun_call) const {
+std::optional<Expr> Fun::eval(const Fun_Call fun_call) const {
     (void)fun_call;
     simul(this->block);
+    return this->return_expr;
 }
 
 bool is_fun_call(const Lexer* lexer) {
@@ -220,6 +227,7 @@ std::optional<Stmt> iter_lexer(Lexer* lexer) {
     else if (lexer->front().equal("if")) return *(new Stmt(If(lexer)));
     std::optional<Expr> out = iter_args(lexer, false);
     if (out) return *(new Stmt(*out));
+    std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
     std::cerr << lexer->filename << ":"; lexer->front().loc.print();
     std::cerr << ": ERROR: Invalid token '" << lexer->front().str << "'" << std::endl;
     exit(1);
@@ -247,9 +255,20 @@ Fun::Fun(Lexer *lexer) {
     lexer->del_front();
     lexer->assert_lexeme_front(OPEN_CURLY);
     lexer->del_front();
+    bool flag = true;
     while (!lexer->front().equal(CLOSE_CURLY)) {
+        if (lexer->is_lexeme_front("return") && flag) {
+            lexer->del_front();
+            this->return_expr = iter_args(lexer);
+            flag = false;
+        }
         std::optional<Stmt> out = iter_lexer(lexer);
-        if (out) this->block.push_back(*out);
+        if (out && flag) this->block.push_back(*out);
+        if (lexer->is_lexeme_front("return") && flag) {
+            lexer->del_front();
+            this->return_expr = iter_args(lexer);
+            flag = false;
+        }
     }
     lexer->del_front();
 }

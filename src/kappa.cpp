@@ -14,7 +14,8 @@
 std::vector<std::string> get_file_contents(std::string filename) {
     std::ifstream fd(filename);
     if (fd.fail()) {
-        std::cerr << "BAD FILE :: Filename `" << filename;
+        std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
+        std::cerr << "ERROR: Filename `" << filename;
         std::cerr << "` does not exist" << std::endl;
         exit(1);
     }
@@ -30,7 +31,6 @@ int main(int argc, char* argv[]) {
     std::vector<std::string> content = get_file_contents(filename);
     Lexer lexer = (Lexer){.content = content, .filename = filename};
     lexer.gen_lexemes();
-    // lexer.print();
     std::vector<Stmt> stmts = parse_lexer(&lexer);
     simul(stmts);
     return 0;

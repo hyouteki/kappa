@@ -7,6 +7,7 @@
 #include <unordered_map>
 #include "parser.hpp"
 
+std::optional<Expr> simul_fun_call(const Fun_Call);
 void simul_stmt(const Stmt);
 void simul(const std::vector<Stmt>);
 
