@@ -6,8 +6,21 @@
 #include <unordered_set>
 #include "lexer.hpp"
 #include "parser.hpp"
+#include "simulator.hpp"
 
 std::unordered_set<std::string> reserved_strs = {"fun"};
+
+std::string Expr::str() const {
+    switch (this->kind) {
+        case Expr::ANY:
+        case Expr::STR:
+            return this->val.str_val;
+        default:
+            std::cerr << "Cannot `stringify` Expr_Kind '";
+            std::cerr << this->kind << "'" << std::endl;
+    }
+    return "";
+}
 
 void Expr::print() const {
     switch (this->kind) {
@@ -77,6 +90,18 @@ void Fun_Call::print() const {
     std::cout << ")";
 }
 
+std::string Fun::sign() const {
+    std::string sign = "";
+    sign += this->name;
+    sign.push_back('(');
+    for (size_t i = 0; i < this->args.size(); ++i) {
+        sign += this->args[i].str();
+        if (i < this->args.size()-1) sign.push_back(',');
+    }
+    sign.push_back(')');
+    return sign;
+}
+
 void Fun::print() const {
     std::cout << "fun " << this->name << "(";
     for (size_t i = 0; i < this->args.size(); ++i) {
@@ -84,6 +109,11 @@ void Fun::print() const {
         if (i < this->args.size()-1) std::cout << ", ";
     }
     std::cout << ") {}";
+}
+
+void Fun::execute(const Fun_Call fun_call) const {
+    (void)fun_call;
+    simul(this->block);
 }
 
 bool is_fun_call(const Lexer* lexer) {

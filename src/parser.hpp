@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 #include <optional>
+#include "lexer.hpp"
 
 typedef struct Expr Expr;
 
@@ -14,7 +15,7 @@ typedef struct Fun_Call {
     std::vector<Expr> args = {};
 public:
     Fun_Call();
-    Fun_Call(Lexer *lexer);
+    Fun_Call(Lexer*);
     void print() const;
 } Fun_Call;
 
@@ -31,6 +32,7 @@ struct Expr {
     } Expr_Val;
     Expr_Val val = {};
 public:
+    std::string str() const;
     void print() const;
 };
 
@@ -42,7 +44,9 @@ typedef struct Fun {
     std::vector<Stmt> block = {};
 public:
     Fun() {}
-    Fun(Lexer *lexer);
+    Fun(Lexer*);
+    void execute(const Fun_Call fun_call) const;
+    std::string sign() const;
     void print() const;
 } Fun;
 

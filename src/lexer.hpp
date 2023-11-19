@@ -40,6 +40,7 @@ typedef struct Lexer {
     std::string filename;
     std::vector<Lexeme> lexemes = {};
 public:
+    void print() const;
     bool empty() const;
     size_t size() const;
     Lexeme at(size_t) const;

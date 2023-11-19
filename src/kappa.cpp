@@ -9,6 +9,7 @@
 #include <fstream>
 #include "lexer.hpp"
 #include "parser.hpp"
+#include "simulator.hpp"
 
 std::vector<std::string> get_file_contents(std::string filename) {
     std::ifstream fd(filename);
@@ -29,10 +30,9 @@ int main(int argc, char* argv[]) {
     std::vector<std::string> content = get_file_contents(filename);
     Lexer lexer = (Lexer){.content = content, .filename = filename};
     lexer.gen_lexemes();
-    for (Lexeme lexeme: lexer.lexemes) {
-        lexeme.print(); std::cout << std::endl;
-    }
-    parse_lexer(&lexer);
+    // lexer.print();
+    std::vector<Stmt> stmts = parse_lexer(&lexer);
+    simul(stmts);
     return 0;
 }
 

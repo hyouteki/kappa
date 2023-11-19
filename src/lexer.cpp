@@ -54,6 +54,32 @@ bool str_starts_with(const std::string str, const std::string target) {
     return true;
 }
 
+std::string replace_str(
+    const std::string initial,
+    const std::string target,
+    const std::string replacement
+) {
+    std::string result = initial;
+    size_t pos = 0;
+    while ((pos = result.find(target, pos)) != std::string::npos) {
+        result.replace(pos, target.length(), replacement);
+        pos += replacement.length();
+    }
+    return result;
+}
+
+std::string decode_str(const std::string& str) {
+    std::string tmp = str;
+    tmp = replace_str(tmp, "\\n", "\n");
+    tmp = replace_str(tmp, "\\r", "\r");
+    tmp = replace_str(tmp, "\\t", "\t");
+    tmp = replace_str(tmp, "\\v", "\v");
+    tmp = replace_str(tmp, "\\f", "\f");
+    tmp = replace_str(tmp, "\\\\", "\\");
+    tmp = replace_str(tmp, "\\'", "'");
+    return tmp;
+}
+
 bool is_valid_name(const char ch) {
     return (
         ('0' <= ch && ch <= '9') ||
@@ -68,8 +94,8 @@ void Location::print() const {
 }
 
 void Lexeme::print() const {
-    this->loc.print();
-    std::cout << ": " << this->str;
+    std::cout << lexeme_kind_str_map.at(this->kind) << ":";
+    this->loc.print(); std::cout << ": " << this->str;
 }
 
 bool Lexeme::equal(const Lexeme lexeme) const {
@@ -82,6 +108,12 @@ bool Lexeme::equal(const std::string name) const {
 
 bool Lexeme::equal(const Lexeme_Kind kind) const {
     return this->kind == kind;
+}
+
+void Lexer::print() const {
+    for (Lexeme lexeme: this->lexemes) {
+        lexeme.print(); std::cout << std::endl;
+    }
 }
 
 bool Lexer::empty() const {
@@ -158,7 +190,7 @@ void Lexer::gen_lexemes() {
                 }
                 Lexeme lexeme = (Lexeme){
                     .kind = STR_LIT,
-                    .str = tmp,
+                    .str = decode_str(tmp),
                     .loc = (Location){.row = i+1, .col = col+1},
                 };
                 lexemes.push_back(lexeme);
