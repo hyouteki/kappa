@@ -7,8 +7,8 @@
 #include <vector>
 #include <iostream>
 #include <fstream>
-#include "toolchain/lexer.hpp"
-#include "toolchain/parser.hpp"
+#include "lexer.hpp"
+#include "parser.hpp"
 
 std::vector<std::string> get_file_contents(std::string filename) {
     std::ifstream fd(filename);
