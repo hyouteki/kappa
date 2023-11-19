@@ -1,2 +1,2 @@
-*.K linguist-detectable
+*.K linguist-detectable=true
 *.K linguist-language=Kappa
