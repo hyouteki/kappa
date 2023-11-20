@@ -8,7 +8,7 @@
 
 std::vector<std::string> DEFAULT_TOKEN_STRS = {
     "fun", "if", "else", "true", "false", "var", "int", "while", "return",
-    "(", ")", "{", ";", "}", ",",
+    "val", "bool", "str", "(", ")", "{", ";", "}", ",", ":", "=",
 };
 
 std::unordered_map<Lexeme_Kind, std::string> lexeme_kind_str_map = {
@@ -20,6 +20,8 @@ std::unordered_map<Lexeme_Kind, std::string> lexeme_kind_str_map = {
     {STR_LIT, "STR_LIT"},
     {SEMI, "SEMI"},
     {COMMA, "COMMA"},
+    {COLON, "COLON"},
+    {EQUAL, "EQUAL"},
 };
 
 std::unordered_map<std::string, Lexeme_Kind> str_lexeme_kind_map = {
@@ -29,7 +31,10 @@ std::unordered_map<std::string, Lexeme_Kind> str_lexeme_kind_map = {
     {"true", NAME},
     {"false", NAME},
     {"var", NAME},
+    {"val", NAME},
     {"int", NAME},
+    {"bool", NAME},
+    {"str", NAME},
     {"while", NAME},
     {"return", NAME},
     {"(", OPEN_PAREN},
@@ -38,7 +43,16 @@ std::unordered_map<std::string, Lexeme_Kind> str_lexeme_kind_map = {
     {"}", CLOSE_CURLY},
     {";", SEMI},
     {",", COMMA},
+    {":", COLON},
+    {"=", EQUAL},
 };
+
+bool Lexeme::is_int() const {
+    if (this->kind != NAME) return false;
+    for (char ch: this->str)
+        if (!isdigit(ch)) return false;
+    return true;
+}
 
 int strip_front(std::string *str) {
     std::string tmp = "";
@@ -192,6 +206,7 @@ void Lexer::gen_lexemes() {
                 }
                 if (tmp[tmp.size()-1] != '"') {
                     Location loc = (Location){.row = i+1, .col = col+tmp.size()+1};
+                    std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
                     std::cerr << this->filename << ":";
                     loc.print();
                     std::cerr << ": ERROR: String literal not closed" << std::endl;
@@ -208,6 +223,7 @@ void Lexer::gen_lexemes() {
                 continue;
             }
             Location loc = (Location){.row = i+1, .col = col+1};
+            std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
             std::cerr << this->filename << ":";
             loc.print();
             std::cerr << ": ERROR: Invalid token '";
@@ -220,53 +236,60 @@ void Lexer::gen_lexemes() {
 
 void Lexer::assert_lexeme_front() const {
     if (this->empty()) {
+        std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
         std::cerr << this->filename;
-        std::cerr << ": ERROR: Expected token; Got nothing";
+        std::cerr << ": ERROR: Expected token; got nothing";
         exit(1);
     }
 }
 
 void Lexer::assert_lexeme_front(const Lexeme lexeme) const {
     if (this->empty()) {
+        std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
         std::cerr << this->filename << ": ERROR: Expected token '";
-        std::cerr << lexeme.str << "'; Got nothing";
+        std::cerr << lexeme.str << "'; got nothing";
         exit(1);
     }
     if (!this->front().equal(lexeme)) {
+        std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
         std::cerr << this->filename << ":";
         this->front().loc.print();
         std::cerr << ": ERROR: Expected token '" << lexeme.str;
-        std::cerr << "'; Got '" << this->front().str << "'" << std::endl;
+        std::cerr << "'; got '" << this->front().str << "'" << std::endl;
         exit(1);
     }
 }
 
 void Lexer::assert_lexeme_front(const std::string name) const {
     if (this->empty()) {
+        std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
         std::cerr << this->filename << ": ERROR: Expected token '";
-        std::cerr << name << "'; Got nothing";
+        std::cerr << name << "'; got nothing";
         exit(1);
     }
     if (!this->front().equal(name)) {
+        std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
         std::cerr << this->filename << ":";
         this->front().loc.print();
         std::cerr << ": ERROR: Expected token '" << name;
-        std::cerr << "'; Got '" << this->front().str << "'" << std::endl;
+        std::cerr << "'; got '" << this->front().str << "'" << std::endl;
         exit(1);
     }
 }
 
 void Lexer::assert_lexeme_front(const Lexeme_Kind kind) const {
     if (this->empty()) {
+        std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
         std::cerr << this->filename << ": ERROR: Expected token of kind '";
-        std::cerr << lexeme_kind_str_map.at(kind) << "'; Got nothing";
+        std::cerr << lexeme_kind_str_map.at(kind) << "'; got nothing";
         exit(1);
     }
     if (!this->front().equal(kind)) {
+        std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
         std::cerr << this->filename << ":";
         this->front().loc.print();
         std::cerr << ": ERROR: Expected token of kind '";
-        std::cerr << lexeme_kind_str_map.at(kind) << "'; Got token '";
+        std::cerr << lexeme_kind_str_map.at(kind) << "'; got token '";
         std::cerr << this->front().str << "' of kind '";
         std::cerr << lexeme_kind_str_map.at(this->front().kind);
         std::cerr << "'" << std::endl;
@@ -276,16 +299,18 @@ void Lexer::assert_lexeme_front(const Lexeme_Kind kind) const {
 
 void Lexer::assert_lexeme_front(const std::vector<Lexeme_Kind> kinds) const {
     if (this->size() < kinds.size()) {
+        std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
         std::cerr << this->filename << ": ERROR: Expected Token_Kind array size '";
-        std::cerr << kinds.size() << "'; Got '" << this->size() << "'";
+        std::cerr << kinds.size() << "'; got '" << this->size() << "'";
         exit(1);
     }
     for (size_t i = 0; i < this->size(); ++i) {
         if (!this->at(i).equal(kinds[i])) {
+            std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
             std::cerr << this->filename << ":";
             this->at(i).loc.print();
             std::cerr << ": ERROR: Expected token of kind '";
-            std::cerr << lexeme_kind_str_map.at(kinds[i]) << "'; Got token '";
+            std::cerr << lexeme_kind_str_map.at(kinds[i]) << "'; got token '";
             std::cerr << this->at(i).str << "' of kind '";
             std::cerr << lexeme_kind_str_map.at(this->at(i).kind);
             std::cerr << "'" << std::endl;

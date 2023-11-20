@@ -21,23 +21,30 @@ public:
     void print() const;
 } Fun_Call;
 
+typedef enum {
+    STR,
+    BOOL,
+    INT,
+    ANY,
+    FUN_CALL,
+} Expr_Kind;
+
 struct Expr {
-    typedef enum {
-        STR,
-        BOOL,
-        ANY,
-        FUN_CALL,
-    } Expr_Kind;
     Expr_Kind kind;
     typedef struct {
         std::string str_val = "";
         bool bool_val = false;
         Fun_Call fun_call = {};
+        int int_val = 0;
     } Expr_Val;
     Expr_Val val = {};
 public:
     std::string str() const;
     void print() const;
+    std::string str_val() const;
+    bool bool_val() const;
+    Fun_Call fun_call() const;
+    int int_val() const;
 };
 
 typedef struct Fun {
@@ -63,30 +70,46 @@ public:
     void print() const;
 };
 
+typedef struct Var {
+    Expr_Kind type;
+    bool mut = false;
+    std::string name = "";
+    std::optional<Expr> expr = {};
+} Var;
+
 struct Stmt {
     typedef enum {
         FUN_DEF,
         IF,
         EXPR,
+        VAR,
     } Stmt_Kind;
     Stmt_Kind kind;
     typedef struct Stmt_Val {
         Fun fun;
         If if_cond;
         Expr expr;
+        Var var;
     } Stmt_Val;
     Stmt_Val val;
 public:
     Stmt(const Fun);
     Stmt(const If);
     Stmt(const Expr);
+    Stmt(const Var);
+    Fun fun() const;
+    If if_cond() const;
+    Expr expr() const;
+    Var var() const;
     void print() const;
 };
 
+Var assign_var(Lexer*);
 std::optional<Stmt> iter_lexer(Lexer*);
-std::optional<Expr> iter_args(Lexer*, bool = true);
+std::optional<Expr> parse_expr(Lexer*, bool = true);
 bool is_fun_call(const Lexer*);
 Fun_Call parse_fun_call(Lexer*);
 std::vector<Stmt> parse_lexer(Lexer*);
+std::string expr_kind_to_str(const Expr_Kind kind);
 
 #endif // KAPPA_PARSER_HPP_

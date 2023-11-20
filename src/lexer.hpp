@@ -13,7 +13,9 @@ typedef enum {
     OPEN_CURLY,
     CLOSE_CURLY,
     STR_LIT,
+    COLON,
     COMMA,
+    EQUAL,
     SEMI
 } Lexeme_Kind;
 
@@ -33,6 +35,7 @@ public:
     bool equal(const Lexeme) const;
     bool equal(const std::string) const;
     bool equal(const Lexeme_Kind) const;
+    bool is_int() const;
 } Lexeme;
 
 typedef struct Lexer {

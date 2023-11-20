@@ -21,7 +21,18 @@ std::vector<std::string> get_file_contents(std::string filename) {
     }
     std::string line;
     std::vector<std::string> lines;
-    while (getline(fd, line)) lines.push_back(line);
+    while (getline(fd, line)) {
+        if (line.find("#") != std::string::npos) {
+            std::string tmp = "";
+            for (char ch: line) {
+                if (ch != '#') tmp.push_back(ch);
+                else break;
+            }
+            line = tmp;
+        }
+        if (line.size() == 0) continue;
+        lines.push_back(line);
+    }
     fd.close();
     return lines;
 }

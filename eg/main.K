@@ -2,7 +2,12 @@ fun ret() {
     return true;
 }
 
-fun main(argc, argv) {
+val n: int = 0;
+val s: str = "string";
+var mut_str: str = "hey";
+
+# main function
+fun main(argc, argv) { #hey
     if (ret()) {
         print("Hello moto\n");
     } else {
@@ -10,6 +15,7 @@ fun main(argc, argv) {
     }
     return "hello";
 }
+
 print("If start\n");
 main();
 print("If end\n");

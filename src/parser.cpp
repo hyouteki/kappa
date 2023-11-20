@@ -10,15 +10,55 @@
 
 std::unordered_set<std::string> reserved_strs = {
     "fun", "if", "else", "true", "false", "var", "int", "while", "return",
+    "val", "bool", "str"
 };
+
+std::string Expr::str_val() const {
+    if (this->kind != STR) {
+        std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
+        std::cerr << "ERROR: Expected Expr_Type `STR`; got '";
+        std::cerr << this->kind << "'" << std::endl;
+        exit(1);
+    }
+    return this->val.str_val;
+}
+bool Expr::bool_val() const {
+    if (this->kind != BOOL) {
+        std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
+        std::cerr << "ERROR: Expected Expr_Type `BOOL`; got '";
+        std::cerr << this->kind << "'" << std::endl;
+        exit(1);
+    }
+    return this->val.bool_val;
+}
+Fun_Call Expr::fun_call() const {
+    if (this->kind != FUN_CALL) {
+        std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
+        std::cerr << "ERROR: Expected Expr_Type `FUN_CALL`; got '";
+        std::cerr << this->kind << "'" << std::endl;
+        exit(1);
+    }
+    return this->val.fun_call;
+}
+int Expr::int_val() const {
+    if (this->kind != INT) {
+        std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
+        std::cerr << "ERROR: Expected Expr_Type `INT`; got '";
+        std::cerr << this->kind << "'" << std::endl;
+        exit(1);
+    }
+    return this->val.int_val;
+}
 
 std::string Expr::str() const {
     switch (this->kind) {
-        case Expr::ANY:
-        case Expr::STR:
-            return this->val.str_val;
-        case Expr::BOOL:
-            return (this->val.bool_val)? "true": "false";
+        case ANY:
+        case STR:
+            return this->str_val();
+        case BOOL:
+            return (this->bool_val())? "true": "false";
+        case INT:
+            return std::to_string(this->int_val());
         default:
             std::cerr << __FILE__ << ":" << __FUNCTION__ << ":";
             std::cerr << __LINE__ << std::endl << "ERROR: Cannot stringify Expr_Kind '";
@@ -30,15 +70,18 @@ std::string Expr::str() const {
 
 void Expr::print() const {
     switch (this->kind) {
-        case Expr::ANY:
-        case Expr::STR:
-            std::cout << this->val.str_val;
+        case ANY:
+        case STR:
+            std::cout << this->str_val();
             break;
-        case Expr::BOOL:
-            if (this->val.bool_val) std::cout << "true";
+        case INT:
+            std::cout << this->int_val();
+            break;
+        case BOOL:
+            if (this->bool_val()) std::cout << "true";
             else std::cout << "false";
             break;
-        case Expr::FUN_CALL:
+        case FUN_CALL:
             this->val.fun_call.print();
             break;
         default:
@@ -109,6 +152,48 @@ Stmt::Stmt(const Expr expr) {
     this->val.expr = expr;
 }
 
+Stmt::Stmt(const Var var) {
+    this->kind = VAR;
+    this->val.var = var;
+}
+
+Fun Stmt::fun() const {
+    if (this->kind != FUN_DEF) {
+        std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
+        std::cerr << "ERROR: Expected Expr_Type `FUN_DEF`; got '";
+        std::cerr << this->kind << "'" << std::endl;
+        exit(1);
+    }
+    return this->val.fun;
+}
+If Stmt::if_cond() const {
+    if (this->kind != IF) {
+        std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
+        std::cerr << "ERROR: Expected Expr_Type `IF`; got '";
+        std::cerr << this->kind << "'" << std::endl;
+        exit(1);
+    }
+    return this->val.if_cond;
+}
+Expr Stmt::expr() const {
+    if (this->kind != EXPR) {
+        std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
+        std::cerr << "ERROR: Expected Expr_Type `EXPR`; got '";
+        std::cerr << this->kind << "'" << std::endl;
+        exit(1);
+    }
+    return this->val.expr;
+}
+Var Stmt::var() const {
+    if (this->kind != VAR) {
+        std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
+        std::cerr << "ERROR: Expected Expr_Type `VAR`; got '";
+        std::cerr << this->kind << "'" << std::endl;
+        exit(1);
+    }
+    return this->val.var;
+}
+
 void Stmt::print() const {
     switch (this->kind) {
         case FUN_DEF:
@@ -127,29 +212,35 @@ void Stmt::print() const {
     }
 }
 
-std::optional<Expr> iter_args(Lexer* lexer, bool error) {
+std::optional<Expr> parse_expr(Lexer* lexer, bool error) {
     Expr* expr = new Expr();
     if (is_fun_call(lexer)) {
         Fun_Call fun_call = Fun_Call(lexer);
-        expr->kind = Expr::FUN_CALL;
+        expr->kind = FUN_CALL;
         expr->val.fun_call = fun_call;
         return *expr;
     }
     if (lexer->front().equal(STR_LIT)) {
-        expr->kind = Expr::STR;
+        expr->kind = STR;
         expr->val.str_val = lexer->front().str.substr(1,
             lexer->front().str.size()-2);
         lexer->del_front();
         return *expr;
     }
+    if (lexer->front().is_int()) {
+        expr->kind = INT;
+        expr->val.int_val = std::stoi(lexer->front().str);
+        lexer->del_front();
+        return *expr;
+    }
     if (lexer->front().equal("true")) {
-        expr->kind = Expr::BOOL;
+        expr->kind = BOOL;
         expr->val.bool_val = true;
         lexer->del_front();
         return *expr;
     }
     if (lexer->front().equal("false")) {
-        expr->kind = Expr::BOOL;
+        expr->kind = BOOL;
         expr->val.bool_val = false;
         lexer->del_front();
         return *expr;
@@ -157,7 +248,7 @@ std::optional<Expr> iter_args(Lexer* lexer, bool error) {
     if (error) {
         std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
         std::cerr << lexer->filename << ":"; lexer->front().loc.print();
-        std::cerr << ": ERROR: Invalid argument '" << lexer->front().str << "'" << std::endl;
+        std::cerr << ": ERROR: Invalid expr '" << lexer->front().str << "'" << std::endl;
         exit(1);
     }
     return {};
@@ -168,7 +259,7 @@ Fun_Call::Fun_Call(Lexer* lexer) {
     lexer->del_front();
     lexer->del_front();
     while (!lexer->front().equal(CLOSE_PAREN)) {
-        this->args.push_back(*iter_args(lexer));
+        this->args.push_back(*parse_expr(lexer));
         if (lexer->front().equal(CLOSE_PAREN)) continue;
         lexer->assert_lexeme_front(COMMA);
         lexer->del_front();
@@ -225,7 +316,9 @@ std::optional<Stmt> iter_lexer(Lexer* lexer) {
     }
     else if (lexer->front().equal("fun")) return *(new Stmt(Fun(lexer)));
     else if (lexer->front().equal("if")) return *(new Stmt(If(lexer)));
-    std::optional<Expr> out = iter_args(lexer, false);
+    else if (lexer->front().equal("var") || lexer->front().equal("val"))
+        return *(new Stmt(assign_var(lexer)));
+    std::optional<Expr> out = parse_expr(lexer, false);
     if (out) return *(new Stmt(*out));
     std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
     std::cerr << lexer->filename << ":"; lexer->front().loc.print();
@@ -244,7 +337,7 @@ Fun::Fun(Lexer *lexer) {
     while (!lexer->front().equal(CLOSE_PAREN)) {
         lexer->assert_lexeme_front(NAME);
         this->args.push_back((Expr){
-            .kind = Expr::ANY,
+            .kind = ANY,
             .val = (Expr::Expr_Val){.str_val = lexer->front().str}
         });
         lexer->del_front();
@@ -259,14 +352,14 @@ Fun::Fun(Lexer *lexer) {
     while (!lexer->front().equal(CLOSE_CURLY)) {
         if (lexer->is_lexeme_front("return") && flag) {
             lexer->del_front();
-            this->return_expr = iter_args(lexer);
+            this->return_expr = parse_expr(lexer);
             flag = false;
         }
         std::optional<Stmt> out = iter_lexer(lexer);
         if (out && flag) this->block.push_back(*out);
         if (lexer->is_lexeme_front("return") && flag) {
             lexer->del_front();
-            this->return_expr = iter_args(lexer);
+            this->return_expr = parse_expr(lexer);
             flag = false;
         }
     }
@@ -280,4 +373,54 @@ std::vector<Stmt> parse_lexer(Lexer *lexer) {
         if (out) block.push_back(*out);
     }
     return block;
+}
+
+Var assign_var(Lexer* lexer) {
+    Var var;
+    if (lexer->is_lexeme_front("var")) var.mut = true;
+    else if (lexer->is_lexeme_front("val")) var.mut = false;
+    lexer->del_front();
+    lexer->assert_lexeme_front(NAME);
+    var.name = lexer->front().str;
+    lexer->del_front();
+    lexer->assert_lexeme_front(COLON);
+    lexer->del_front();
+    lexer->assert_lexeme_front(NAME);
+    if (lexer->front().str == "str") var.type = STR;
+    else if (lexer->front().str == "int") var.type = INT;
+    else if (lexer->front().str == "bool") var.type = BOOL;
+    else if (lexer->front().str == "bool") var.type = ANY;
+    else {
+        std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
+        std::cerr << lexer->filename << ":"; lexer->front().loc.print();
+        std::cerr << ": ERROR: Invalid datatype '" << lexer->front().str << "'" << std::endl;
+        exit(1);
+    }
+    lexer->del_front();
+    lexer->assert_lexeme_front(EQUAL);
+    lexer->del_front();
+    Expr expr = *parse_expr(lexer, true);
+    if (var.type != expr.kind) {
+        std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
+        std::cerr << lexer->filename << ":"; lexer->front().loc.print();
+        std::cerr << ": ERROR: Type mismatch, expected type '" << expr_kind_to_str(var.type);
+        std::cerr << "'; got '" << expr_kind_to_str(expr.kind) << "'" << std::endl;
+        exit(1);
+    }
+    var.expr = expr;
+    return var;
+}
+
+std::string expr_kind_to_str(const Expr_Kind kind) {
+    switch (kind) {
+        case STR: return "str";
+        case INT: return "int";
+        case BOOL: return "bool";
+        case ANY: return "any";
+        case FUN_CALL: return "fun_call";
+        default:
+            std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
+            std::cerr << "ERROR: Invalid Expr_Kind " << kind << "'" << std::endl;
+            exit(1);
+    }
 }

@@ -8,6 +8,7 @@
 #include "builtins.hpp"
 
 std::unordered_map<std::string, Fun> sign_fun_map;
+std::unordered_map<std::string, Var> global_vars;
 
 std::optional<Expr> simul_fun_call(const Fun_Call fun_call) {
     if (!mapper(fun_call)) {
@@ -25,18 +26,17 @@ std::optional<Expr> simul_fun_call(const Fun_Call fun_call) {
 void simul_stmt(const Stmt stmt) {
     switch (stmt.kind) {
         case Stmt::FUN_DEF: {
-            if (sign_fun_map.find(stmt.val.fun.name) != sign_fun_map.end()) {
+            if (sign_fun_map.find(stmt.fun().name) != sign_fun_map.end()) {
                 std::cerr << __FILE__ << ":" << __FUNCTION__ << ":";
                 std::cerr << __LINE__ << std::endl;
                 std::cerr << "ERROR: Redefination of function with signature '";
-                std::cerr << stmt.val.fun.name << std::endl;
+                std::cerr << stmt.fun().name << std::endl;
                 exit(1);
             }
-            sign_fun_map[stmt.val.fun.name] = stmt.val.fun;
+            sign_fun_map[stmt.fun().name] = stmt.fun();
         } break;
         case Stmt::IF: {
-            If if_cond = stmt.val.if_cond;
-            Stmt* condition = if_cond.condition;
+            Stmt* condition = stmt.if_cond().condition;
             if (condition->kind != Stmt::EXPR) {
                 std::cerr << __FILE__ << ":" << __FUNCTION__ << ":";
                 std::cerr << __LINE__ << std::endl;
@@ -45,32 +45,45 @@ void simul_stmt(const Stmt stmt) {
             }
             Expr expr = condition->val.expr;
             switch (expr.kind) {
-                case Expr::BOOL:
-                    if (expr.val.bool_val) simul(if_cond.then_block);
-                    else simul(if_cond.else_block);
+                case BOOL:
+                    if (expr.bool_val()) simul(stmt.if_cond().then_block);
+                    else simul(stmt.if_cond().else_block);
                     break;
-                case Expr::FUN_CALL: {
-                    std::optional<Expr> out = simul_fun_call(expr.val.fun_call);
+                case FUN_CALL: {
+                    std::optional<Expr> out = simul_fun_call(expr.fun_call());
                     if (out) {
                         expr = *out;
                         switch (expr.kind) {
-                            case Expr::BOOL:
-                                if (expr.val.bool_val) simul(if_cond.then_block);
-                                else simul(if_cond.else_block);
+                            case BOOL:
+                                if (expr.bool_val()) simul(stmt.if_cond().then_block);
+                                else simul(stmt.if_cond().else_block);
                                 break;
                             default:
-                                simul(if_cond.then_block);
+                                simul(stmt.if_cond().then_block);
                                 exit(1);
                         }
-                    } else simul(if_cond.else_block);
+                    } else simul(stmt.if_cond().else_block);
                 } break;
                 default:
-                    simul(if_cond.then_block);
+                    simul(stmt.if_cond().then_block);
             }
         } break;
+        case Stmt::VAR: {
+            Var var = stmt.var();
+            if (global_vars.find(var.name) != global_vars.end()) {
+                Var tmp = global_vars.at(var.name);
+                if (tmp.type != var.type) {
+                    std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
+                    std::cerr << ": ERROR: Type mismatch, expected type '" << expr_kind_to_str(tmp.type);
+                    std::cerr << "'; got '" << expr_kind_to_str(var.type) << "'" << std::endl;
+                    exit(1);
+                }
+            }
+            global_vars[var.name] = var;
+        } break;
         case Stmt::EXPR: {
-            if (stmt.val.expr.kind == Expr::FUN_CALL)
-                simul_fun_call(stmt.val.expr.val.fun_call);
+            if (stmt.expr().kind == FUN_CALL)
+                simul_fun_call(stmt.expr().fun_call());
         } break;
         default:
             std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
