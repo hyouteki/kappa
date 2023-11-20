@@ -43,7 +43,8 @@ int main(int argc, char* argv[]) {
     Lexer lexer = (Lexer){.content = content, .filename = filename};
     lexer.gen_lexemes();
     std::vector<Stmt> stmts = parse_lexer(&lexer);
-    simul(stmts);
+    std::unordered_map<std::string, Var> vars;
+    simul(stmts, &vars);
     return 0;
 }
 

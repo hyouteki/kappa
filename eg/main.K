@@ -9,13 +9,13 @@ var mut_str: str = "hey";
 # main function
 fun main(argc: int, string: str = "hello"): str { #hey
     if (ret()) {
-        print("Hello moto\n");
+        print(string, "\n");
     } else {
-        print("Hey there\n");
+        print(n, "\n");
     }
     return "hello";
 }
 
 print("If start\n");
-main();
+main(1);
 print("If end\n");

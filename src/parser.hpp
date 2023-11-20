@@ -29,6 +29,7 @@ typedef enum {
     ANY,
     NULL_EXPR,
     FUN_CALL,
+    VAR,
 } Expr_Kind;
 
 struct Expr {
@@ -57,7 +58,6 @@ typedef struct Fun {
 public:
     Fun() {}
     Fun(Lexer*);
-    std::optional<Expr> eval(const Fun_Call fun_call) const;
     void print() const;
 } Fun;
 
@@ -108,7 +108,7 @@ public:
 
 Var assign_var(Lexer*);
 std::optional<Stmt> iter_lexer(Lexer*);
-std::optional<Expr> parse_expr(Lexer*, bool = true);
+std::optional<Expr> parse_expr(Lexer*);
 bool is_fun_call(const Lexer*);
 Fun_Call parse_fun_call(Lexer*);
 std::vector<Stmt> parse_lexer(Lexer*);

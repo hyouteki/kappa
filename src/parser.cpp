@@ -14,7 +14,7 @@ std::unordered_set<std::string> reserved_strs = {
 };
 
 std::string Expr::str_val() const {
-    if (this->kind != STR) {
+    if (this->kind != STR && this->kind != VAR) {
         std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
         std::cerr << "ERROR: Expected Expr_Type `STR`; got '";
         std::cerr << this->kind << "'" << std::endl;
@@ -81,6 +81,9 @@ void Expr::print() const {
         case BOOL:
             if (this->bool_val()) std::cout << "true";
             else std::cout << "false";
+            break;
+        case VAR:
+            std::cout << this->str_val();
             break;
         case FUN_CALL:
             this->val.fun_call.print();
@@ -216,7 +219,7 @@ void Stmt::print() const {
     }
 }
 
-std::optional<Expr> parse_expr(Lexer* lexer, bool error) {
+std::optional<Expr> parse_expr(Lexer* lexer) {
     Expr* expr = new Expr();
     if (is_fun_call(lexer)) {
         Fun_Call fun_call = Fun_Call(lexer);
@@ -254,13 +257,10 @@ std::optional<Expr> parse_expr(Lexer* lexer, bool error) {
         lexer->del_front();
         return *expr;
     }
-    if (error) {
-        std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
-        std::cerr << lexer->filename << ":"; lexer->front().loc.print();
-        std::cerr << ": ERROR: Invalid expr '" << lexer->front().str << "'" << std::endl;
-        exit(1);
-    }
-    return {};
+    expr->kind = VAR;
+    expr->val.str_val = lexer->front().str;
+    lexer->del_front();
+    return *expr;
 }
 
 Fun_Call::Fun_Call(Lexer* lexer) {
@@ -294,11 +294,6 @@ void Fun::print() const {
     std::cout << ") {}";
 }
 
-std::optional<Expr> Fun::eval(const Fun_Call fun_call) const {
-    (void)fun_call;
-    return simul(this->block, true);
-}
-
 bool is_fun_call(const Lexer* lexer) {
     std::vector<Lexeme_Kind> regex = {NAME, OPEN_PAREN};
     return (lexer->is_lexeme_front(regex) &&
@@ -314,7 +309,7 @@ std::optional<Stmt> iter_lexer(Lexer* lexer) {
     else if (lexer->front().equal("if")) return *(new Stmt(If(lexer)));
     else if (lexer->front().equal("var") || lexer->front().equal("val"))
         return *(new Stmt(assign_var(lexer)));
-    std::optional<Expr> out = parse_expr(lexer, false);
+    std::optional<Expr> out = parse_expr(lexer);
     if (out) return *(new Stmt(*out));
     std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
     std::cerr << lexer->filename << ":"; lexer->front().loc.print();
@@ -342,7 +337,7 @@ Fun::Fun(Lexer *lexer) {
         lexer->del_front();
         if (lexer->front().equal(EQUAL)) {
             lexer->del_front();
-            Expr expr = *parse_expr(lexer, true);
+            Expr expr = *parse_expr(lexer);
             if (var->type != expr.kind) {
                 std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
                 std::cerr << lexer->filename << ":"; lexer->front().loc.print();
@@ -429,7 +424,7 @@ Var assign_var(Lexer* lexer) {
     lexer->del_front();
     lexer->assert_lexeme_front(EQUAL);
     lexer->del_front();
-    Expr expr = *parse_expr(lexer, true);
+    Expr expr = *parse_expr(lexer);
     if (var.type != expr.kind) {
         std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
         std::cerr << lexer->filename << ":"; lexer->front().loc.print();
@@ -449,6 +444,7 @@ std::string expr_kind_to_str(const Expr_Kind kind) {
         case ANY: return "any";
         case FUN_CALL: return "fun_call";
         case NULL_EXPR: return "null";
+        case VAR: return "var";
         default:
             std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
             std::cerr << "ERROR: Invalid Expr_Kind " << kind << "'" << std::endl;
