@@ -11,6 +11,7 @@
 typedef struct Expr Expr;
 typedef struct Stmt Stmt;
 typedef struct If If;
+typedef struct Var Var;
 
 typedef struct Fun_Call {
     std::string name = "";
@@ -51,13 +52,12 @@ public:
 typedef struct Fun {
     std::string name = "";
     Expr_Kind return_type = NULL_EXPR;
-    std::vector<Expr> args = {};
+    std::vector<Var> args = {};
     std::vector<Stmt> block = {};
 public:
     Fun() {}
     Fun(Lexer*);
     std::optional<Expr> eval(const Fun_Call fun_call) const;
-    std::string sign() const;
     void print() const;
 } Fun;
 
@@ -71,12 +71,12 @@ public:
     void print() const;
 };
 
-typedef struct Var {
+struct Var {
     Expr_Kind type;
-    bool mut = false;
+    bool mut = true;
     std::string name = "";
     std::optional<Expr> expr = {};
-} Var;
+};
 
 struct Stmt {
     typedef enum {
@@ -114,6 +114,6 @@ Fun_Call parse_fun_call(Lexer*);
 std::vector<Stmt> parse_lexer(Lexer*);
 std::string expr_kind_to_str(const Expr_Kind);
 std::string stmt_kind_to_str(const Stmt::Stmt_Kind);
-Expr_Kind get_expr_kind(Lexer*);
+Expr_Kind str_to_expr_kind(Lexer*);
 
 #endif // KAPPA_PARSER_HPP_

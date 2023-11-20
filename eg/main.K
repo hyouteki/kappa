@@ -7,7 +7,7 @@ val s: str = "string";
 var mut_str: str = "hey";
 
 # main function
-fun main(argc, argv): str { #hey
+fun main(argc: int, string: str = "hello"): str { #hey
     if (ret()) {
         print("Hello moto\n");
     } else {

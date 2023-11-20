@@ -285,22 +285,10 @@ void Fun_Call::print() const {
     std::cout << ")";
 }
 
-std::string Fun::sign() const {
-    std::string sign = "";
-    sign += this->name;
-    sign.push_back('(');
-    for (size_t i = 0; i < this->args.size(); ++i) {
-        sign += this->args[i].str();
-        if (i < this->args.size()-1) sign.push_back(',');
-    }
-    sign.push_back(')');
-    return sign;
-}
-
 void Fun::print() const {
     std::cout << "fun " << this->name << "(";
     for (size_t i = 0; i < this->args.size(); ++i) {
-        this->args[i].print();
+        std::cout << this->args[i].name;
         if (i < this->args.size()-1) std::cout << ", ";
     }
     std::cout << ") {}";
@@ -343,12 +331,28 @@ Fun::Fun(Lexer *lexer) {
     lexer->assert_lexeme_front(OPEN_PAREN);
     lexer->del_front();
     while (!lexer->front().equal(CLOSE_PAREN)) {
+        Var* var = new Var();
         lexer->assert_lexeme_front(NAME);
-        this->args.push_back((Expr){
-            .kind = ANY,
-            .val = (Expr::Expr_Val){.str_val = lexer->front().str}
-        });
+        var->name = lexer->front().str;
         lexer->del_front();
+        lexer->assert_lexeme_front(COLON);
+        lexer->del_front();
+        lexer->assert_lexeme_front(NAME);
+        var->type = str_to_expr_kind(lexer);
+        lexer->del_front();
+        if (lexer->front().equal(EQUAL)) {
+            lexer->del_front();
+            Expr expr = *parse_expr(lexer, true);
+            if (var->type != expr.kind) {
+                std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
+                std::cerr << lexer->filename << ":"; lexer->front().loc.print();
+                std::cerr << ": ERROR: Type mismatch, expected type '" << expr_kind_to_str(var->type);
+                std::cerr << "'; got '" << expr_kind_to_str(expr.kind) << "'" << std::endl;
+                exit(1);
+            }
+            var->expr = expr;
+        }
+        this->args.push_back(*var);
         if (lexer->front().equal(CLOSE_PAREN)) continue;
         lexer->assert_lexeme_front(COMMA);
         lexer->del_front();
@@ -357,7 +361,7 @@ Fun::Fun(Lexer *lexer) {
     lexer->assert_lexeme_front(COLON);
     lexer->del_front();
     lexer->assert_lexeme_front(NAME);
-    this->return_type = get_expr_kind(lexer);
+    this->return_type = str_to_expr_kind(lexer);
     lexer->del_front();
     lexer->assert_lexeme_front(OPEN_CURLY);
     lexer->del_front();
@@ -421,7 +425,7 @@ Var assign_var(Lexer* lexer) {
     lexer->assert_lexeme_front(COLON);
     lexer->del_front();
     lexer->assert_lexeme_front(NAME);
-    var.type = get_expr_kind(lexer);
+    var.type = str_to_expr_kind(lexer);
     lexer->del_front();
     lexer->assert_lexeme_front(EQUAL);
     lexer->del_front();
@@ -466,7 +470,7 @@ std::string stmt_kind_to_str(const Stmt::Stmt_Kind kind) {
     }
 }
 
-Expr_Kind get_expr_kind(Lexer* lexer) {
+Expr_Kind str_to_expr_kind(Lexer* lexer) {
     if (lexer->front().str == "str") return STR;
     else if (lexer->front().str == "int") return INT;
     else if (lexer->front().str == "bool") return BOOL;

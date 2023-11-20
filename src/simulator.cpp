@@ -8,18 +8,18 @@
 #include "simulator.hpp"
 #include "builtins.hpp"
 
-std::unordered_map<std::string, Fun> sign_fun_map;
+std::unordered_map<std::string, Fun> funs;
 std::unordered_map<std::string, Var> global_vars;
 
 std::optional<Expr> simul_fun_call(const Fun_Call fun_call) {
     if (!mapper(fun_call)) {
-        if (sign_fun_map.find(fun_call.name) == sign_fun_map.end()) {
+        if (funs.find(fun_call.name) == funs.end()) {
             std::cerr << __FILE__ << ":" << __FUNCTION__ << ":";
             std::cerr << __LINE__ << std::endl;
             std::cerr << "ERROR: Cannot find the function '";
             std::cerr << fun_call.name << "'" << std::endl;
             exit(1);
-        } else return sign_fun_map.at(fun_call.name).eval(fun_call);
+        } else return funs.at(fun_call.name).eval(fun_call);
     }
     return {};
 }
@@ -27,14 +27,14 @@ std::optional<Expr> simul_fun_call(const Fun_Call fun_call) {
 std::optional<Expr> simul_stmt(const Stmt stmt, const bool can_return) {
     switch (stmt.kind) {
         case Stmt::FUN_DEF: {
-            if (sign_fun_map.find(stmt.fun().name) != sign_fun_map.end()) {
+            if (funs.find(stmt.fun().name) != funs.end()) {
                 std::cerr << __FILE__ << ":" << __FUNCTION__ << ":";
                 std::cerr << __LINE__ << std::endl;
                 std::cerr << "ERROR: Redefination of function with signature '";
                 std::cerr << stmt.fun().name << std::endl;
                 exit(1);
             }
-            sign_fun_map[stmt.fun().name] = stmt.fun();
+            funs[stmt.fun().name] = stmt.fun();
         } break;
         case Stmt::IF: {
             Stmt* condition = stmt.if_cond().condition;
