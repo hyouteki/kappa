@@ -1,4 +1,4 @@
-fun ret() {
+fun ret(): any {
     return true;
 }
 
@@ -7,7 +7,7 @@ val s: str = "string";
 var mut_str: str = "hey";
 
 # main function
-fun main(argc, argv) { #hey
+fun main(argc, argv): str { #hey
     if (ret()) {
         print("Hello moto\n");
     } else {

@@ -3,6 +3,7 @@
 #include <vector>
 #include <iostream>
 #include <unordered_map>
+#include <optional>
 #include "parser.hpp"
 #include "simulator.hpp"
 #include "builtins.hpp"
@@ -23,7 +24,7 @@ std::optional<Expr> simul_fun_call(const Fun_Call fun_call) {
     return {};
 }
 
-void simul_stmt(const Stmt stmt) {
+std::optional<Expr> simul_stmt(const Stmt stmt, const bool can_return) {
     switch (stmt.kind) {
         case Stmt::FUN_DEF: {
             if (sign_fun_map.find(stmt.fun().name) != sign_fun_map.end()) {
@@ -85,13 +86,26 @@ void simul_stmt(const Stmt stmt) {
             if (stmt.expr().kind == FUN_CALL)
                 simul_fun_call(stmt.expr().fun_call());
         } break;
+        case Stmt::RETURN: {
+            if (!can_return) {
+                std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
+                std::cerr << "ERROR: Illegal Stmt_Kind; cannot return outside fo a function" << std::endl;
+                exit(1);
+            }
+            return stmt.expr();
+        } break;
         default:
             std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
             std::cerr << "ERROR: Invalid Stmt_Kind" << std::endl;
             exit(1);
     }
+    return {};
 }
 
-void simul(const std::vector<Stmt> stmts) {
-    for (Stmt stmt: stmts) simul_stmt(stmt);
+std::optional<Expr> simul(const std::vector<Stmt> stmts, bool can_return) {
+    for (Stmt stmt: stmts) {
+        std::optional<Expr> out = simul_stmt(stmt, can_return);
+        if (out) return *out;
+    }
+    return {};
 }

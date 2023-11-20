@@ -8,7 +8,7 @@
 
 std::vector<std::string> DEFAULT_TOKEN_STRS = {
     "fun", "if", "else", "true", "false", "var", "int", "while", "return",
-    "val", "bool", "str", "(", ")", "{", ";", "}", ",", ":", "=",
+    "val", "bool", "str", "null", "(", ")", "{", ";", "}", ",", ":", "=",
 };
 
 std::unordered_map<Lexeme_Kind, std::string> lexeme_kind_str_map = {
@@ -35,6 +35,7 @@ std::unordered_map<std::string, Lexeme_Kind> str_lexeme_kind_map = {
     {"int", NAME},
     {"bool", NAME},
     {"str", NAME},
+    {"null", NAME},
     {"while", NAME},
     {"return", NAME},
     {"(", OPEN_PAREN},

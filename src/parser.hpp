@@ -26,6 +26,7 @@ typedef enum {
     BOOL,
     INT,
     ANY,
+    NULL_EXPR,
     FUN_CALL,
 } Expr_Kind;
 
@@ -49,7 +50,7 @@ public:
 
 typedef struct Fun {
     std::string name = "";
-    std::optional<Expr> return_expr = {};
+    Expr_Kind return_type = NULL_EXPR;
     std::vector<Expr> args = {};
     std::vector<Stmt> block = {};
 public:
@@ -83,6 +84,7 @@ struct Stmt {
         IF,
         EXPR,
         VAR,
+        RETURN,
     } Stmt_Kind;
     Stmt_Kind kind;
     typedef struct Stmt_Val {
@@ -110,6 +112,8 @@ std::optional<Expr> parse_expr(Lexer*, bool = true);
 bool is_fun_call(const Lexer*);
 Fun_Call parse_fun_call(Lexer*);
 std::vector<Stmt> parse_lexer(Lexer*);
-std::string expr_kind_to_str(const Expr_Kind kind);
+std::string expr_kind_to_str(const Expr_Kind);
+std::string stmt_kind_to_str(const Stmt::Stmt_Kind);
+Expr_Kind get_expr_kind(Lexer*);
 
 #endif // KAPPA_PARSER_HPP_
