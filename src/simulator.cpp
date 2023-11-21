@@ -187,10 +187,17 @@ std::optional<Expr> simul_stmt(
                     Var tmp = global_vars.at(var.name);
                     if (tmp.type != var.type) {
                         std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
-                        std::cerr << ": ERROR: Type mismatch, expected type '" << expr_kind_to_str(tmp.type);
+                        std::cerr << "ERROR: Type mismatch, expected type '" << expr_kind_to_str(tmp.type);
                         std::cerr << "'; got '" << expr_kind_to_str(var.type) << "'" << std::endl;
                         exit(1);
                     }
+                    if (!global_vars[var.name].mut) {
+                        std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
+                        std::cerr << "ERROR: Illegal operation, variable '" << var.name;
+                        std::cerr << "' is not mutable" << std::endl;
+                        exit(1);
+                    }
+                    var.mut = global_vars.at(var.name).mut;
                 }
                 global_vars[var.name] = var;
             } else {
@@ -202,6 +209,13 @@ std::optional<Expr> simul_stmt(
                         std::cerr << "'; got '" << expr_kind_to_str(var.type) << "'" << std::endl;
                         exit(1);
                     }
+                    if (!vars->at(var.name).mut) {
+                        std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
+                        std::cerr << ": ERROR: Illegal operation, variable '" << var.name;
+                        std::cerr << "' is not mutable" << std::endl;
+                        exit(1);
+                    }
+                    var.mut = vars->at(var.name).mut;
                 }
                 vars->insert({var.name, var});
             }

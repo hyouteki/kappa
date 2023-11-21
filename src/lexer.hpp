@@ -57,6 +57,7 @@ public:
     void assert_lexeme_front(const std::vector<Lexeme_Kind>) const;
     bool is_lexeme_front(const std::vector<Lexeme_Kind>) const;
     bool is_lexeme_front(const std::string) const;
+    bool is_lexeme_front(const Lexeme_Kind) const;
 } Lexer;
 
 #endif // KAPPA_LEXER_HPP_

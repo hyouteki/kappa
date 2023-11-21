@@ -2,9 +2,11 @@ fun ret(): any {
     return true;
 }
 
-val n: int = 0;
+var n: int = 0;
 val s: str = "string";
 var mut_str: str = "hey";
+
+n = 4;
 
 # main function
 fun main(argc: int, string: str = "moto"): str { #hey
@@ -19,6 +21,8 @@ fun main(argc: int, string: str = "moto"): str { #hey
 
 print("If start\n");
 main(1);
-val x: str = main(0, main(0));
+var x: str = main(0, main(0));
+print(x, "\n");
+x = "";
 print(x, "\n");
 print("If end\n");

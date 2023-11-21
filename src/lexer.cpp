@@ -316,3 +316,8 @@ bool Lexer::is_lexeme_front(const std::vector<Lexeme_Kind> kinds) const {
 bool Lexer::is_lexeme_front(const std::string str) const {
     return !this->empty() && this->front().equal(str);
 }
+
+
+bool Lexer::is_lexeme_front(const Lexeme_Kind kind) const {
+    return !this->empty() && this->front().equal(kind);
+}

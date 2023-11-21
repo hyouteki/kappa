@@ -30,7 +30,6 @@ std::vector<std::string> get_file_contents(std::string filename) {
             }
             line = tmp;
         }
-        if (line.size() == 0) continue;
         lines.push_back(line);
     }
     fd.close();

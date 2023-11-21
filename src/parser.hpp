@@ -106,6 +106,7 @@ public:
     void print() const;
 };
 
+std::optional<Stmt> parse_expr_stmt(Lexer*);
 Var assign_var(Lexer*);
 std::optional<Stmt> iter_lexer(Lexer*);
 std::optional<Expr> parse_expr(Lexer*);

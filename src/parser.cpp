@@ -212,6 +212,9 @@ void Stmt::print() const {
         case RETURN:
             std::cout << "return"; this->expr().print();
             break;
+        case VAR:
+            std::cout << this->var().name << " = "; (*this->var().expr).print();
+            break;
         default:
             std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
             std::cerr << "ERROR: Invalid Stmt_Kind" << std::endl;
@@ -309,8 +312,8 @@ std::optional<Stmt> iter_lexer(Lexer* lexer) {
     else if (lexer->front().equal("if")) return *(new Stmt(If(lexer)));
     else if (lexer->front().equal("var") || lexer->front().equal("val"))
         return *(new Stmt(assign_var(lexer)));
-    std::optional<Expr> out = parse_expr(lexer);
-    if (out) return *(new Stmt(*out));
+    std::optional<Stmt> out = parse_expr_stmt(lexer);
+    if (out) return *out;
     std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
     std::cerr << lexer->filename << ":"; lexer->front().loc.print();
     std::cerr << ": ERROR: Invalid token '" << lexer->front().str << "'" << std::endl;
@@ -479,4 +482,24 @@ Expr_Kind str_to_expr_kind(Lexer* lexer) {
         exit(1);
     }
     return NULL_EXPR;
+}
+
+std::optional<Stmt> parse_expr_stmt(Lexer* lexer) {
+    std::optional<Expr> out = parse_expr(lexer);
+    if (!out) return {};
+    Expr expr = *out;
+    if (expr.kind != VAR) return *(new Stmt(expr));
+    std::string name = expr.str_val();
+    lexer->assert_lexeme_front(EQUAL);
+    lexer->del_front();
+    out = parse_expr(lexer);
+    if (out) {
+        Expr tmp = *out;
+        Var* var = new Var();
+        var->name = name;
+        var->type = tmp.kind;
+        var->expr = tmp;
+        return *(new Stmt(*var));
+    }
+    return {};
 }
