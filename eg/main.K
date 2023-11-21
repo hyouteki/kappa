@@ -7,9 +7,10 @@ val s: str = "string";
 var mut_str: str = "hey";
 
 # main function
-fun main(argc: int, string: str = "hello"): str { #hey
+fun main(argc: int, string: str = "moto"): str { #hey
+    var x: int = 3;
     if (ret()) {
-        print(string, "\n");
+        print(string, x, "\n");
     } else {
         print(n, "\n");
     }
@@ -18,4 +19,6 @@ fun main(argc: int, string: str = "hello"): str { #hey
 
 print("If start\n");
 main(1);
+val x: str = main(0, main(0));
+print(x, "\n");
 print("If end\n");

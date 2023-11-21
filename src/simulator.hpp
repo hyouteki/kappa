@@ -9,6 +9,12 @@
 #include <optional>
 #include "parser.hpp"
 
+Expr fun_call_to_expr(
+    const Expr,
+    const Expr_Kind,
+    std::unordered_map<std::string, Var>*
+);
+Fun get_fun(const Fun_Call);
 Fun_Call replace_vars_to_exprs(
     const Fun_Call,
     std::unordered_map<std::string, Var>*
@@ -29,11 +35,13 @@ std::optional<Expr> simul_fun_call(
 std::optional<Expr> simul_stmt(
     const Stmt,
     std::unordered_map<std::string, Var>*,
+    const bool = false,
     const bool = false
 );
 std::optional<Expr> simul(
     const std::vector<Stmt>,
     std::unordered_map<std::string, Var>*,
+    const bool = false,
     const bool = false
 );
 

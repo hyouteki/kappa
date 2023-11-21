@@ -44,7 +44,7 @@ int main(int argc, char* argv[]) {
     lexer.gen_lexemes();
     std::vector<Stmt> stmts = parse_lexer(&lexer);
     std::unordered_map<std::string, Var> vars;
-    simul(stmts, &vars);
+    simul(stmts, &vars, false, true);
     return 0;
 }
 

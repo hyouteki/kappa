@@ -425,7 +425,7 @@ Var assign_var(Lexer* lexer) {
     lexer->assert_lexeme_front(EQUAL);
     lexer->del_front();
     Expr expr = *parse_expr(lexer);
-    if (var.type != expr.kind) {
+    if (expr.kind != FUN_CALL && var.type != expr.kind) {
         std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
         std::cerr << lexer->filename << ":"; lexer->front().loc.print();
         std::cerr << ": ERROR: Type mismatch, expected type '" << expr_kind_to_str(var.type);

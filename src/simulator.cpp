@@ -11,6 +11,42 @@
 std::unordered_map<std::string, Fun> funs;
 std::unordered_map<std::string, Var> global_vars;
 
+Expr fun_call_to_expr(
+    const Expr expr,
+    const Expr_Kind kind,
+    std::unordered_map<std::string, Var>* vars
+) {
+    if (expr.kind != FUN_CALL) {
+        if (expr.kind != kind) {
+            std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
+            std::cerr << "ERROR: Type mismatch, expected type '" << expr_kind_to_str(kind);
+            std::cerr << "'; but got argument of type '";
+            std::cerr << expr_kind_to_str(expr.kind) << "'" << std::endl;
+            exit(1);
+        } else return expr;
+    }
+    Fun fun = get_fun(expr.fun_call());
+    if (fun.return_type != kind) {
+        std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
+        std::cerr << "ERROR: Type mismatch, expected type '" << expr_kind_to_str(kind);
+        std::cerr << "'; but function return type is '";
+        std::cerr << expr_kind_to_str(fun.return_type) << "'" << std::endl;
+        exit(1);
+    }
+    return *eval_fun_call(fun, expr.fun_call(), vars);
+}
+
+Fun get_fun(const Fun_Call fun_call) {
+    if (funs.find(fun_call.name) == funs.end()) {
+        std::cerr << __FILE__ << ":" << __FUNCTION__ << ":";
+        std::cerr << __LINE__ << std::endl;
+        std::cerr << "ERROR: Cannot find the function '";
+        std::cerr << fun_call.name << "'" << std::endl;
+        exit(1);
+    }
+    return funs.at(fun_call.name);
+}
+
 Fun_Call replace_vars_to_exprs(
     const Fun_Call fun_call,
     std::unordered_map<std::string, Var>* vars
@@ -31,7 +67,9 @@ std::optional<Expr> var_expr_to_expr(
         return vars->at(expr.str_val()).expr;
     if (global_vars.find(expr.str_val()) != global_vars.end())
         return global_vars.at(expr.str_val()).expr;
-    return {};
+    std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
+    std::cerr << "ERROR: Undefined variable '" << expr.str_val() << "'" << std::endl;
+    exit(1);
 }
 
 std::optional<Expr> eval_fun_call(
@@ -50,6 +88,8 @@ std::optional<Expr> eval_fun_call(
             exit(1);
         }
         Expr expr = *out;
+        if (expr.kind == FUN_CALL) expr = *eval_fun_call(
+            get_fun(expr.fun_call()), expr.fun_call(), vars);
         if (expr.kind != fun.args[i].type) {
             std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
             std::cerr << "ERROR: Expected type '" << expr_kind_to_str(fun.args[i].type);
@@ -85,24 +125,16 @@ std::optional<Expr> simul_fun_call(
     std::unordered_map<std::string, Var>* vars
 ) {
     Fun_Call tmp = replace_vars_to_exprs(fun_call, vars);
-    if (!mapper(tmp)) {
-        if (funs.find(tmp.name) == funs.end()) {
-            std::cerr << __FILE__ << ":" << __FUNCTION__ << ":";
-            std::cerr << __LINE__ << std::endl;
-            std::cerr << "ERROR: Cannot find the function '";
-            std::cerr << tmp.name << "'" << std::endl;
-            exit(1);
-        } else return eval_fun_call(funs.at(tmp.name), tmp, vars);
-    }
+    if (!mapper(tmp)) return eval_fun_call(get_fun(fun_call), tmp, vars);
     return {};
 }
 
 std::optional<Expr> simul_stmt(
     const Stmt stmt,
     std::unordered_map<std::string, Var>* vars,
-    const bool can_return
+    const bool can_return,
+    const bool is_global
 ) {
-    (void)vars;
     switch (stmt.kind) {
         case Stmt::FUN_DEF: {
             if (funs.find(stmt.fun().name) != funs.end()) {
@@ -149,16 +181,30 @@ std::optional<Expr> simul_stmt(
         } break;
         case Stmt::VAR: {
             Var var = stmt.var();
-            if (global_vars.find(var.name) != global_vars.end()) {
-                Var tmp = global_vars.at(var.name);
-                if (tmp.type != var.type) {
-                    std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
-                    std::cerr << ": ERROR: Type mismatch, expected type '" << expr_kind_to_str(tmp.type);
-                    std::cerr << "'; got '" << expr_kind_to_str(var.type) << "'" << std::endl;
-                    exit(1);
+            if (var.expr) var.expr = fun_call_to_expr(*var.expr, var.type, vars);
+            if (is_global) {
+                if (global_vars.find(var.name) != global_vars.end()) {
+                    Var tmp = global_vars.at(var.name);
+                    if (tmp.type != var.type) {
+                        std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
+                        std::cerr << ": ERROR: Type mismatch, expected type '" << expr_kind_to_str(tmp.type);
+                        std::cerr << "'; got '" << expr_kind_to_str(var.type) << "'" << std::endl;
+                        exit(1);
+                    }
                 }
+                global_vars[var.name] = var;
+            } else {
+                if (vars->find(var.name) != vars->end()) {
+                    Var tmp = global_vars.at(var.name);
+                    if (tmp.type != var.type) {
+                        std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
+                        std::cerr << ": ERROR: Type mismatch, expected type '" << expr_kind_to_str(tmp.type);
+                        std::cerr << "'; got '" << expr_kind_to_str(var.type) << "'" << std::endl;
+                        exit(1);
+                    }
+                }
+                vars->insert({var.name, var});
             }
-            global_vars[var.name] = var;
         } break;
         case Stmt::EXPR: {
             if (stmt.expr().kind == FUN_CALL)
@@ -183,10 +229,11 @@ std::optional<Expr> simul_stmt(
 std::optional<Expr> simul(
     const std::vector<Stmt> stmts,
     std::unordered_map<std::string, Var>* vars,
-    const bool can_return
+    const bool can_return,
+    const bool is_global
 ) {
     for (Stmt stmt: stmts) {
-        std::optional<Expr> out = simul_stmt(stmt, vars, can_return);
+        std::optional<Expr> out = simul_stmt(stmt, vars, can_return, is_global);
         if (out) return *out;
     }
     return {};
