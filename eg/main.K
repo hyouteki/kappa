@@ -33,4 +33,11 @@ var x: int = 0;
 
 x = 1 + 2;
 
+fun hello(): null {
+    var y: int = 3 + 4;
+    print(y, "\n");
+}
+
+hello();
+
 print(x, "\n");

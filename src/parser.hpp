@@ -43,9 +43,12 @@ struct Expr {
         int int_val = 0;
     } Expr_Val;
     Expr_Val val = {};
+    Expr* val1 = nullptr;
     Expr* val2 = nullptr;
     Lexeme_Kind op;
 public:
+    Expr() {}
+    Expr(int);
     std::string str() const;
     void print() const;
     std::string str_val() const;

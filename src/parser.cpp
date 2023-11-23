@@ -17,6 +17,11 @@ std::unordered_set<Lexeme_Kind> operators = {
     PLUS,
 };
 
+Expr::Expr(int num) {
+    this->kind = INT;
+    this->val.int_val = num;
+}
+
 std::string Expr::str_val() const {
     if (this->kind != STR && this->kind != _VAR) {
         std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
@@ -265,6 +270,10 @@ std::optional<Expr> parse_expr(Lexer* lexer) {
     if (lexer->is_lexeme_front(operators)) {
         expr->op = lexer->front().kind;
         lexer->del_front();
+        expr->val1 = new Expr();
+        expr->val1->kind = expr->kind;
+        expr->val1->val = expr->val;
+        expr->kind = _MIX;
         expr->val2 = new Expr(*parse_expr(lexer));
     }
     return *expr;
@@ -432,7 +441,10 @@ Var assign_var(Lexer* lexer) {
     lexer->assert_lexeme_front(EQUAL);
     lexer->del_front();
     Expr expr = *parse_expr(lexer);
-    if (expr.kind != FUN_CALL && !are_expr_kinds_compatible(var.type, expr.kind)) {
+    if (
+        expr.kind != FUN_CALL &&
+        !are_expr_kinds_compatible(var.type, expr.kind)
+    ) {
         std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
         std::cerr << lexer->filename << ":"; lexer->front().loc.print();
         std::cerr << ": ERROR: Type mismatch, expected type '" << expr_kind_to_str(var.type);
@@ -452,6 +464,7 @@ std::string expr_kind_to_str(const Expr_Kind kind) {
         case FUN_CALL: return "fun_call";
         case NULL_EXPR: return "null";
         case _VAR: return "var";
+        case _MIX: return "_MIX";
         default:
             std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
             std::cerr << "ERROR: Invalid Expr_Kind " << kind << "'" << std::endl;
