@@ -29,19 +29,8 @@
 # print("If end\n");
 
 
-fun foo(): str {
-    return "str";
-}
+var x: int = 0;
 
-var x: any = null;
+x = 1 + 2;
+
 print(x, "\n");
-x = foo();
-print(x, "\n");
-x = 6;
-print(x, "\n");
-var y: str = null;
-print(y, "\n");
-y = "hmm";
-print(y, "\n");
-y = null;
-print(y, "\n");

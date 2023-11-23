@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <string>
 #include <vector>
+#include <unordered_set>
 
 typedef enum {
     NAME,
@@ -16,7 +17,8 @@ typedef enum {
     COLON,
     COMMA,
     EQUAL,
-    SEMI
+    SEMI,
+    PLUS
 } Lexeme_Kind;
 
 typedef struct Location {
@@ -58,6 +60,9 @@ public:
     bool is_lexeme_front(const std::vector<Lexeme_Kind>) const;
     bool is_lexeme_front(const std::string) const;
     bool is_lexeme_front(const Lexeme_Kind) const;
+    bool is_lexeme_front(const std::unordered_set<Lexeme_Kind>) const;
 } Lexer;
+
+std::string lexeme_kind_to_str(const Lexeme_Kind);
 
 #endif // KAPPA_LEXER_HPP_

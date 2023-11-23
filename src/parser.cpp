@@ -13,6 +13,10 @@ std::unordered_set<std::string> reserved_strs = {
     "val", "bool", "str", "null",
 };
 
+std::unordered_set<Lexeme_Kind> operators = {
+    PLUS,
+};
+
 std::string Expr::str_val() const {
     if (this->kind != STR && this->kind != _VAR) {
         std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
@@ -228,41 +232,41 @@ std::optional<Expr> parse_expr(Lexer* lexer) {
         Fun_Call fun_call = Fun_Call(lexer);
         expr->kind = FUN_CALL;
         expr->val.fun_call = fun_call;
-        return *expr;
-    }
-    if (lexer->front().equal(STR_LIT)) {
+    } else if (lexer->front().equal(STR_LIT)) {
         expr->kind = STR;
         expr->val.str_val = lexer->front().str.substr(1,
             lexer->front().str.size()-2);
         lexer->del_front();
-        return *expr;
-    }
-    if (lexer->front().is_int()) {
+    } else if (lexer->front().is_int()) {
         expr->kind = INT;
         expr->val.int_val = std::stoi(lexer->front().str);
         lexer->del_front();
-        return *expr;
-    }
-    if (lexer->front().equal("true")) {
+    } else if (!lexer->is_lexeme_front(NAME)) {
+        std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
+        std::cerr << lexer->filename << ":"; lexer->front().loc.print();
+        std::cerr << ": ERROR: Invalid expression '" << lexer->front().str << "'" << std::endl;
+        exit(1);
+    } else if (lexer->front().equal("true")) {
         expr->kind = BOOL;
         expr->val.bool_val = true;
         lexer->del_front();
-        return *expr;
-    }
-    if (lexer->front().equal("false")) {
+    } else if (lexer->front().equal("false")) {
         expr->kind = BOOL;
         expr->val.bool_val = false;
         lexer->del_front();
-        return *expr;
-    }
-    if (lexer->front().equal("null")) {
+    } else if (lexer->front().equal("null")) {
         expr->kind = NULL_EXPR;
         lexer->del_front();
-        return *expr;
+    } else {
+        expr->kind = _VAR;
+        expr->val.str_val = lexer->front().str;
+        lexer->del_front();
     }
-    expr->kind = _VAR;
-    expr->val.str_val = lexer->front().str;
-    lexer->del_front();
+    if (lexer->is_lexeme_front(operators)) {
+        expr->op = lexer->front().kind;
+        lexer->del_front();
+        expr->val2 = new Expr(*parse_expr(lexer));
+    }
     return *expr;
 }
 
@@ -508,4 +512,14 @@ bool are_expr_kinds_compatible(const Expr_Kind var_kind, const Expr_Kind expr_ki
     if (var_kind == ANY) return true;
     if (expr_kind == NULL_EXPR) return true;
     return var_kind == expr_kind;
+}
+
+Expr assert_null_check(Lexer* lexer, std::optional<Expr> expr) {
+    if (expr) {
+        std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
+        std::cerr << lexer->filename << ":"; lexer->front().loc.print();
+        std::cerr << ": ERROR: Expected an expression, got nothing" << std::endl;
+        exit(1);
+    }
+    return *expr;
 }

@@ -31,6 +31,7 @@ typedef enum {
     FUN_CALL,
     _VAR,
     _RE_ASS,
+    _MIX,
 } Expr_Kind;
 
 struct Expr {
@@ -42,6 +43,8 @@ struct Expr {
         int int_val = 0;
     } Expr_Val;
     Expr_Val val = {};
+    Expr* val2 = nullptr;
+    Lexeme_Kind op;
 public:
     std::string str() const;
     void print() const;
@@ -118,5 +121,6 @@ std::string expr_kind_to_str(const Expr_Kind);
 std::string stmt_kind_to_str(const Stmt::Stmt_Kind);
 Expr_Kind str_to_expr_kind(Lexer*);
 bool are_expr_kinds_compatible(const Expr_Kind, const Expr_Kind);
+Expr assert_null_check(Lexer*, std::optional<Expr>);
 
 #endif // KAPPA_PARSER_HPP_

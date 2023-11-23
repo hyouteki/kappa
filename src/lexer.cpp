@@ -4,10 +4,11 @@
 #include <vector>
 #include <iostream>
 #include <unordered_map>
+#include <unordered_set>
 #include "lexer.hpp"
 
 std::vector<std::string> DEFAULT_TOKEN_STRS = {
-    "(", ")", "{", ";", "}", ",", ":", "="};
+    "(", ")", "{", ";", "}", ",", ":", "=", "+"};
 
 std::unordered_map<Lexeme_Kind, std::string> lexeme_kind_str_map = {
     {NAME, "NAME"},
@@ -20,6 +21,7 @@ std::unordered_map<Lexeme_Kind, std::string> lexeme_kind_str_map = {
     {COMMA, "COMMA"},
     {COLON, "COLON"},
     {EQUAL, "EQUAL"},
+    {PLUS, "PLUS"},
 };
 
 std::unordered_map<std::string, Lexeme_Kind> str_lexeme_kind_map = {
@@ -31,6 +33,7 @@ std::unordered_map<std::string, Lexeme_Kind> str_lexeme_kind_map = {
     {",", COMMA},
     {":", COLON},
     {"=", EQUAL},
+    {"+", PLUS},
 };
 
 bool Lexeme::is_int() const {
@@ -224,7 +227,7 @@ void Lexer::assert_lexeme_front() const {
     if (this->empty()) {
         std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
         std::cerr << this->filename;
-        std::cerr << ": ERROR: Expected token; got nothing";
+        std::cerr << ": ERROR: Expected token; got nothing" << std::endl;
         exit(1);
     }
 }
@@ -320,4 +323,29 @@ bool Lexer::is_lexeme_front(const std::string str) const {
 
 bool Lexer::is_lexeme_front(const Lexeme_Kind kind) const {
     return !this->empty() && this->front().equal(kind);
+}
+
+bool Lexer::is_lexeme_front(const std::unordered_set<Lexeme_Kind> kinds) const {
+    if (this->empty()) return false;
+    for (Lexeme_Kind kind: kinds)
+        if (this->is_lexeme_front(kind)) return true;
+    return false;
+}
+
+
+std::string lexeme_kind_to_str(const Lexeme_Kind kind) {
+    switch (kind) {
+        case NAME: return "NAME";
+        case OPEN_PAREN: return "OPEN_PAREN";
+        case CLOSE_PAREN: return "CLOSE_PAREN";
+        case OPEN_CURLY: return "OPEN_CURLY";
+        case CLOSE_CURLY: return "CLOSE_CURLY";
+        case STR_LIT: return "STR_LIT";
+        case SEMI: return "SEMI";
+        case COMMA: return "COMMA";
+        case COLON: return "COLON";
+        case EQUAL: return "EQUAL";
+        case PLUS: return "PLUS";
+    }
+    return "";
 }
