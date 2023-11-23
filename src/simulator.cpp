@@ -17,7 +17,7 @@ Expr fun_call_to_expr(
     std::unordered_map<std::string, Var>* vars
 ) {
     if (expr.kind != FUN_CALL) {
-        if (expr.kind != kind) {
+        if (!are_expr_kinds_compatible(kind, expr.kind)) {
             std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
             std::cerr << "ERROR: Type mismatch, expected type '" << expr_kind_to_str(kind);
             std::cerr << "'; but got argument of type '";
@@ -26,7 +26,7 @@ Expr fun_call_to_expr(
         } else return expr;
     }
     Fun fun = get_fun(expr.fun_call());
-    if (fun.return_type != kind) {
+    if (!are_expr_kinds_compatible(kind, fun.return_type)) {
         std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
         std::cerr << "ERROR: Type mismatch, expected type '" << expr_kind_to_str(kind);
         std::cerr << "'; but function return type is '";
@@ -62,7 +62,7 @@ std::optional<Expr> var_expr_to_expr(
     const Expr expr,
     std::unordered_map<std::string, Var>* vars
 ) {
-    if (expr.kind != VAR) return expr;
+    if (expr.kind != _VAR) return expr;
     if (vars->find(expr.str_val()) != vars->end())
         return vars->at(expr.str_val()).expr;
     if (global_vars.find(expr.str_val()) != global_vars.end())
@@ -181,41 +181,96 @@ std::optional<Expr> simul_stmt(
         } break;
         case Stmt::VAR: {
             Var var = stmt.var();
-            if (var.expr) var.expr = fun_call_to_expr(*var.expr, var.type, vars);
-            if (is_global) {
-                if (global_vars.find(var.name) != global_vars.end()) {
-                    Var tmp = global_vars.at(var.name);
-                    if (tmp.type != var.type) {
+            if (var.type == _RE_ASS) {
+                if (is_global) {
+                    if (global_vars.find(var.name) == global_vars.end()) {
                         std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
-                        std::cerr << "ERROR: Type mismatch, expected type '" << expr_kind_to_str(tmp.type);
-                        std::cerr << "'; got '" << expr_kind_to_str(var.type) << "'" << std::endl;
+                        std::cerr << "ERROR: Variable '" << var.name;
+                        std::cerr << "' is not declared" << std::endl;
                         exit(1);
                     }
+                    if (!global_vars.at(var.name).mut) {
+                        std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
+                        std::cerr << "ERROR: Illegal operation, variable '" << var.name;
+                        std::cerr << "' is not mutable" << std::endl;
+                        exit(1);
+                    }
+
+                    Expr expr = fun_call_to_expr(*var.expr, global_vars.at(var.name).type, vars);
+                    if (!are_expr_kinds_compatible(global_vars.at(var.name).type, expr.kind)) {
+                        std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
+                        std::cerr << "ERROR: Type mismatch, expected type '";
+                        std::cerr << expr_kind_to_str(global_vars.at(var.name).type);
+                        std::cerr << "'; got '" << expr_kind_to_str(expr.kind) << "'" << std::endl;
+                        exit(1);
+                    }
+                    global_vars[var.name].expr = expr;
+                } else {
+                    if (vars->find(var.name) == vars->end()) {
+                        std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
+                        std::cerr << "ERROR: Variable '" << var.name;
+                        std::cerr << "' is not declared" << std::endl;
+                        exit(1);
+                    }
+                    if (!vars->at(var.name).mut) {
+                        std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
+                        std::cerr << "ERROR: Illegal operation, variable '" << var.name;
+                        std::cerr << "' is not mutable" << std::endl;
+                        exit(1);
+                    }
+                    Expr expr = fun_call_to_expr(*var.expr, vars->at(var.name).type, vars);
+                    if (!are_expr_kinds_compatible(vars->at(var.name).type, expr.kind)) {
+                        std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
+                        std::cerr << "ERROR: Type mismatch, expected type '";
+                        std::cerr << expr_kind_to_str(vars->at(var.name).type);
+                        std::cerr << "'; got '" << expr_kind_to_str(expr.kind) << "'" << std::endl;
+                        exit(1);
+                    }
+                    var.mut = true;
+                    var.type = vars->at(var.name).type;
+                    var.expr = expr;
+                    vars->insert({var.name, var});
+                }
+                return {};
+            }
+            Expr expr = fun_call_to_expr(*var.expr, var.type, vars);
+            var.expr = expr;
+            if (is_global) {
+                if (global_vars.find(var.name) != global_vars.end()) {
                     if (!global_vars[var.name].mut) {
                         std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
                         std::cerr << "ERROR: Illegal operation, variable '" << var.name;
                         std::cerr << "' is not mutable" << std::endl;
                         exit(1);
                     }
+                    if (!are_expr_kinds_compatible(global_vars.at(var.name).type, expr.kind)) {
+                        std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
+                        std::cerr << "ERROR: Type mismatch, expected type '";
+                        std::cerr << expr_kind_to_str(global_vars.at(var.name).type);
+                        std::cerr << "'; got '" << expr_kind_to_str(expr.kind) << "'" << std::endl;
+                        exit(1);
+                    }
                     var.mut = global_vars.at(var.name).mut;
+                    var.type = global_vars.at(var.name).type;
                 }
                 global_vars[var.name] = var;
             } else {
                 if (vars->find(var.name) != vars->end()) {
-                    Var tmp = global_vars.at(var.name);
-                    if (tmp.type != var.type) {
-                        std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
-                        std::cerr << ": ERROR: Type mismatch, expected type '" << expr_kind_to_str(tmp.type);
-                        std::cerr << "'; got '" << expr_kind_to_str(var.type) << "'" << std::endl;
-                        exit(1);
-                    }
                     if (!vars->at(var.name).mut) {
                         std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
                         std::cerr << ": ERROR: Illegal operation, variable '" << var.name;
                         std::cerr << "' is not mutable" << std::endl;
                         exit(1);
                     }
+                    if (!are_expr_kinds_compatible(vars->at(var.name).type, expr.kind)) {
+                        std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
+                        std::cerr << "ERROR: Type mismatch, expected type '";
+                        std::cerr << expr_kind_to_str(vars->at(var.name).type);
+                        std::cerr << "'; got '" << expr_kind_to_str(expr.kind) << "'" << std::endl;
+                        exit(1);
+                    }
                     var.mut = vars->at(var.name).mut;
+                    var.type = vars->at(var.name).type;
                 }
                 vars->insert({var.name, var});
             }

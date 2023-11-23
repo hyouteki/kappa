@@ -14,7 +14,7 @@ std::unordered_set<std::string> reserved_strs = {
 };
 
 std::string Expr::str_val() const {
-    if (this->kind != STR && this->kind != VAR) {
+    if (this->kind != STR && this->kind != _VAR) {
         std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
         std::cerr << "ERROR: Expected Expr_Type `STR`; got '";
         std::cerr << this->kind << "'" << std::endl;
@@ -82,7 +82,7 @@ void Expr::print() const {
             if (this->bool_val()) std::cout << "true";
             else std::cout << "false";
             break;
-        case VAR:
+        case _VAR:
             std::cout << this->str_val();
             break;
         case FUN_CALL:
@@ -260,7 +260,7 @@ std::optional<Expr> parse_expr(Lexer* lexer) {
         lexer->del_front();
         return *expr;
     }
-    expr->kind = VAR;
+    expr->kind = _VAR;
     expr->val.str_val = lexer->front().str;
     lexer->del_front();
     return *expr;
@@ -428,7 +428,7 @@ Var assign_var(Lexer* lexer) {
     lexer->assert_lexeme_front(EQUAL);
     lexer->del_front();
     Expr expr = *parse_expr(lexer);
-    if (expr.kind != FUN_CALL && var.type != expr.kind) {
+    if (expr.kind != FUN_CALL && !are_expr_kinds_compatible(var.type, expr.kind)) {
         std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
         std::cerr << lexer->filename << ":"; lexer->front().loc.print();
         std::cerr << ": ERROR: Type mismatch, expected type '" << expr_kind_to_str(var.type);
@@ -447,7 +447,7 @@ std::string expr_kind_to_str(const Expr_Kind kind) {
         case ANY: return "any";
         case FUN_CALL: return "fun_call";
         case NULL_EXPR: return "null";
-        case VAR: return "var";
+        case _VAR: return "var";
         default:
             std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
             std::cerr << "ERROR: Invalid Expr_Kind " << kind << "'" << std::endl;
@@ -488,7 +488,7 @@ std::optional<Stmt> parse_expr_stmt(Lexer* lexer) {
     std::optional<Expr> out = parse_expr(lexer);
     if (!out) return {};
     Expr expr = *out;
-    if (expr.kind != VAR) return *(new Stmt(expr));
+    if (expr.kind != _VAR) return *(new Stmt(expr));
     std::string name = expr.str_val();
     lexer->assert_lexeme_front(EQUAL);
     lexer->del_front();
@@ -497,9 +497,15 @@ std::optional<Stmt> parse_expr_stmt(Lexer* lexer) {
         Expr tmp = *out;
         Var* var = new Var();
         var->name = name;
-        var->type = tmp.kind;
+        var->type = _RE_ASS;
         var->expr = tmp;
         return *(new Stmt(*var));
     }
     return {};
+}
+
+bool are_expr_kinds_compatible(const Expr_Kind var_kind, const Expr_Kind expr_kind) {
+    if (var_kind == ANY) return true;
+    if (expr_kind == NULL_EXPR) return true;
+    return var_kind == expr_kind;
 }

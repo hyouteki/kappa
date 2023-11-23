@@ -29,7 +29,8 @@ typedef enum {
     ANY,
     NULL_EXPR,
     FUN_CALL,
-    VAR,
+    _VAR,
+    _RE_ASS,
 } Expr_Kind;
 
 struct Expr {
@@ -116,5 +117,6 @@ std::vector<Stmt> parse_lexer(Lexer*);
 std::string expr_kind_to_str(const Expr_Kind);
 std::string stmt_kind_to_str(const Stmt::Stmt_Kind);
 Expr_Kind str_to_expr_kind(Lexer*);
+bool are_expr_kinds_compatible(const Expr_Kind, const Expr_Kind);
 
 #endif // KAPPA_PARSER_HPP_

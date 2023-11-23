@@ -5,6 +5,3 @@
 - break, continue
 - macros
 - imports
-
-## TODOs
-- default arguments should be at the end
