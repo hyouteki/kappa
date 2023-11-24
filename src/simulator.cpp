@@ -42,8 +42,12 @@ Expr mix_to_expr(const Expr expr, Expr_Kind kind, Var_Map* vars) {
     if (expr.kind != _MIX) return expr;
     assert(expr.val1 != nullptr);
     assert(expr.val2 != nullptr);
-    Expr expr1 = fun_call_to_expr(*expr.val1, kind, vars);
-    Expr expr2 = fun_call_to_expr(*expr.val2, kind, vars);
+    std::optional<Expr> out = var_expr_to_expr(*expr.val1, vars);
+    assert(out);
+    Expr expr1 = fun_call_to_expr(*out, kind, vars);
+    out = var_expr_to_expr(*expr.val2, vars);
+    assert(out);
+    Expr expr2 = fun_call_to_expr(*out, kind, vars);
     if (expr1.kind != expr2.kind) {
         std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
         std::cerr << "ERROR: Type mismatch '" << expr_kind_to_str(expr1.kind);
@@ -125,9 +129,7 @@ std::optional<Expr> eval_fun_call(
             std::cerr << "'" << std::endl;
             exit(1);
         }
-        Expr expr = *out;
-        if (expr.kind == FUN_CALL) expr = *eval_fun_call(
-            get_fun(expr.fun_call()), expr.fun_call(), vars);
+        Expr expr = reduce_to_basic_expr(*out, fun.args[i].type, vars);
         if (expr.kind != fun.args[i].type) {
             std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
             std::cerr << "ERROR: Expected type '" << expr_kind_to_str(fun.args[i].type);
@@ -268,7 +270,6 @@ std::optional<Expr> simul_stmt(
                 return {};
             }
             Expr expr = reduce_to_basic_expr(*var.expr, var.type, vars);
-            std::cout << "hello "; expr.print(); std::cout << std::endl;
             if (is_global) {
                 if (global_vars.find(var.name) != global_vars.end()) {
                     if (!global_vars[var.name].mut) {
@@ -284,8 +285,8 @@ std::optional<Expr> simul_stmt(
                         std::cerr << "'; got '" << expr_kind_to_str(expr.kind) << "'" << std::endl;
                         exit(1);
                     }
-                }
-                global_vars.find(var.name)->second.expr = expr;
+                    global_vars.find(var.name)->second.expr = expr;
+                } else global_vars[var.name] = var;
             } else {
                 if (vars->find(var.name) != vars->end()) {
                     if (!vars->at(var.name).mut) {
@@ -301,10 +302,12 @@ std::optional<Expr> simul_stmt(
                         std::cerr << "'; got '" << expr_kind_to_str(expr.kind) << "'" << std::endl;
                         exit(1);
                     }
+                    vars->find(var.name)->second.expr = expr;
+                } else {
+                    var.expr = expr;
+                    vars->insert({var.name, var});
                 }
-                vars->find(var.name)->second.expr = expr;
             }
-            std::cout << "hello "; expr.print(); std::cout << std::endl;
         } break;
         case Stmt::EXPR: {
             if (stmt.expr().kind == FUN_CALL)

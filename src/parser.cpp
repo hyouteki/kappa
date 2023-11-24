@@ -4,6 +4,7 @@
 #include <vector>
 #include <iostream>
 #include <unordered_set>
+#include <cassert>
 #include "lexer.hpp"
 #include "parser.hpp"
 #include "simulator.hpp"
@@ -96,6 +97,13 @@ void Expr::print() const {
             break;
         case FUN_CALL:
             this->val.fun_call.print();
+            break;
+        case _MIX:
+            assert(this->val1);
+            assert(this->val2);
+            this->val1->print();
+            std::cout << " " << lexeme_kind_to_str(this->op) << " ";
+            this->val2->print();
             break;
         default:
             std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
@@ -441,16 +449,6 @@ Var assign_var(Lexer* lexer) {
     lexer->assert_lexeme_front(EQUAL);
     lexer->del_front();
     Expr expr = *parse_expr(lexer);
-    if (
-        expr.kind != FUN_CALL &&
-        !are_expr_kinds_compatible(var.type, expr.kind)
-    ) {
-        std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
-        std::cerr << lexer->filename << ":"; lexer->front().loc.print();
-        std::cerr << ": ERROR: Type mismatch, expected type '" << expr_kind_to_str(var.type);
-        std::cerr << "'; got '" << expr_kind_to_str(expr.kind) << "'" << std::endl;
-        exit(1);
-    }
     var.expr = expr;
     return var;
 }

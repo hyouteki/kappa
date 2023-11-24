@@ -33,8 +33,11 @@ var x: int = 0;
 
 x = 1 + 2;
 
+x = x + 1;
+
 fun hello(): null {
     var y: int = 3 + 4;
+    y = 2 + y;
     print(y, "\n");
 }
 

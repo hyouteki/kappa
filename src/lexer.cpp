@@ -336,16 +336,16 @@ bool Lexer::is_lexeme_front(const std::unordered_set<Lexeme_Kind> kinds) const {
 std::string lexeme_kind_to_str(const Lexeme_Kind kind) {
     switch (kind) {
         case NAME: return "NAME";
-        case OPEN_PAREN: return "OPEN_PAREN";
-        case CLOSE_PAREN: return "CLOSE_PAREN";
-        case OPEN_CURLY: return "OPEN_CURLY";
-        case CLOSE_CURLY: return "CLOSE_CURLY";
-        case STR_LIT: return "STR_LIT";
-        case SEMI: return "SEMI";
-        case COMMA: return "COMMA";
-        case COLON: return "COLON";
-        case EQUAL: return "EQUAL";
-        case PLUS: return "PLUS";
+        case OPEN_PAREN: return "(";
+        case CLOSE_PAREN: return ")";
+        case OPEN_CURLY: return "{";
+        case CLOSE_CURLY: return "}";
+        case STR_LIT: return "\"\"";
+        case SEMI: return ";";
+        case COMMA: return ",";
+        case COLON: return ":";
+        case EQUAL: return "=";
+        case PLUS: return "+";
     }
     return "";
 }
