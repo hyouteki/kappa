@@ -31,9 +31,18 @@
 
 var x: int = 0;
 
-x = 1 + 2;
+x = 5 ** 2;
+x = x * 3;
 
-x = x + 1;
+print("and =", true && false, "\n");
+print("or  =", true || false, "\n");
+
+print("4 & 5 = ", 4 & 5, "\n");
+print("4 | 5 = ", 4 | 5, "\n");
+print("4 ^ 5 = ", 4 ^ 5, "\n");
+
+val z: str = "kap" + "pa";
+print(z, "\n");
 
 fun hello(): null {
     var y: int = 3 + 4;

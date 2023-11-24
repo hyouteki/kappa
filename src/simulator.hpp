@@ -13,8 +13,8 @@
 
 Expr reduce_to_basic_expr(const Expr, const Expr_Kind, Var_Map*);
 Expr eval(const Lexeme_Kind, const Expr, const Expr);
-Expr mix_to_expr(const Expr, Expr_Kind, Var_Map*);
-Expr fun_call_to_expr(const Expr, const Expr_Kind, Var_Map*);
+Expr mix_to_expr(const Expr, Expr_Kind, Var_Map*, bool = true);
+Expr fun_call_to_expr(const Expr, const Expr_Kind, Var_Map*, bool = true);
 Fun get_fun(const Fun_Call);
 Fun_Call replace_vars_to_exprs(const Fun_Call, Var_Map*);
 std::optional<Expr> var_expr_to_expr(const Expr, Var_Map*);

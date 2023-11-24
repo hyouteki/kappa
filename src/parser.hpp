@@ -49,6 +49,8 @@ struct Expr {
 public:
     Expr() {}
     Expr(int);
+    Expr(bool);
+    Expr(std::string);
     std::string str() const;
     void print() const;
     std::string str_val() const;

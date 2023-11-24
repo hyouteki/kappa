@@ -16,11 +16,31 @@ std::unordered_set<std::string> reserved_strs = {
 
 std::unordered_set<Lexeme_Kind> operators = {
     PLUS,
+    MINUS,
+    MUL,
+    DIV,
+    MOD,
+    POW,
+    AND,
+    BIT_AND,
+    OR,
+    BIT_OR,
+    BIT_XOR,
 };
 
 Expr::Expr(int num) {
     this->kind = INT;
     this->val.int_val = num;
+}
+
+Expr::Expr(bool arg) {
+    this->kind = BOOL;
+    this->val.bool_val = arg;
+}
+
+Expr::Expr(std::string str) {
+    this->kind = STR;
+    this->val.str_val = str;
 }
 
 std::string Expr::str_val() const {
@@ -32,6 +52,7 @@ std::string Expr::str_val() const {
     }
     return this->val.str_val;
 }
+
 bool Expr::bool_val() const {
     if (this->kind != BOOL) {
         std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
@@ -41,6 +62,7 @@ bool Expr::bool_val() const {
     }
     return this->val.bool_val;
 }
+
 Fun_Call Expr::fun_call() const {
     if (this->kind != FUN_CALL) {
         std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
@@ -50,6 +72,7 @@ Fun_Call Expr::fun_call() const {
     }
     return this->val.fun_call;
 }
+
 int Expr::int_val() const {
     if (this->kind != INT) {
         std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;

@@ -18,7 +18,19 @@ typedef enum {
     COMMA,
     EQUAL,
     SEMI,
-    PLUS
+    PLUS,
+    MINUS,
+    MUL,
+    DIV,
+    MOD,
+    POW,
+    AND,
+    OR,
+    COMP_NOT_EQUAL,
+    NOT,
+    BIT_AND,
+    BIT_OR,
+    BIT_XOR,
 } Lexeme_Kind;
 
 typedef struct Location {

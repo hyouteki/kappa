@@ -8,20 +8,8 @@
 #include "lexer.hpp"
 
 std::vector<std::string> DEFAULT_TOKEN_STRS = {
-    "(", ")", "{", ";", "}", ",", ":", "=", "+"};
-
-std::unordered_map<Lexeme_Kind, std::string> lexeme_kind_str_map = {
-    {NAME, "NAME"},
-    {OPEN_PAREN, "OPEN_PAREN"},
-    {CLOSE_PAREN, "CLOSE_PAREN"},
-    {OPEN_CURLY, "OPEN_CURLY"},
-    {CLOSE_CURLY, "CLOSE_CURLY"},
-    {STR_LIT, "STR_LIT"},
-    {SEMI, "SEMI"},
-    {COMMA, "COMMA"},
-    {COLON, "COLON"},
-    {EQUAL, "EQUAL"},
-    {PLUS, "PLUS"},
+    "(", ")", "{", ";", "}", ",", ":", "!=", "=", "!",
+    "+", "-", "**", "*", "/", "%", "&&", "&", "||", "|", "^",
 };
 
 std::unordered_map<std::string, Lexeme_Kind> str_lexeme_kind_map = {
@@ -33,7 +21,19 @@ std::unordered_map<std::string, Lexeme_Kind> str_lexeme_kind_map = {
     {",", COMMA},
     {":", COLON},
     {"=", EQUAL},
+    {"!=", COMP_NOT_EQUAL},
+    {"!", NOT},
     {"+", PLUS},
+    {"-", MINUS},
+    {"*", MUL},
+    {"/", DIV},
+    {"%", MOD},
+    {"**", POW},
+    {"&", BIT_AND},
+    {"&&", AND},
+    {"||", OR},
+    {"|", BIT_OR},
+    {"^", BIT_XOR},
 };
 
 bool Lexeme::is_int() const {
@@ -106,7 +106,7 @@ void Location::print() const {
 }
 
 void Lexeme::print() const {
-    std::cout << lexeme_kind_str_map.at(this->kind) << ":";
+    std::cout << lexeme_kind_to_str(this->kind) << ":";
     this->loc.print(); std::cout << ": " << this->str;
 }
 
@@ -270,7 +270,7 @@ void Lexer::assert_lexeme_front(const Lexeme_Kind kind) const {
     if (this->empty()) {
         std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
         std::cerr << this->filename << ": ERROR: Expected token of kind '";
-        std::cerr << lexeme_kind_str_map.at(kind) << "'; got nothing";
+        std::cerr << lexeme_kind_to_str(kind) << "'; got nothing";
         exit(1);
     }
     if (!this->front().equal(kind)) {
@@ -278,9 +278,9 @@ void Lexer::assert_lexeme_front(const Lexeme_Kind kind) const {
         std::cerr << this->filename << ":";
         this->front().loc.print();
         std::cerr << ": ERROR: Expected token of kind '";
-        std::cerr << lexeme_kind_str_map.at(kind) << "'; got token '";
+        std::cerr << lexeme_kind_to_str(kind) << "'; got token '";
         std::cerr << this->front().str << "' of kind '";
-        std::cerr << lexeme_kind_str_map.at(this->front().kind);
+        std::cerr << lexeme_kind_to_str(this->front().kind);
         std::cerr << "'" << std::endl;
         exit(1);
     }
@@ -299,9 +299,9 @@ void Lexer::assert_lexeme_front(const std::vector<Lexeme_Kind> kinds) const {
             std::cerr << this->filename << ":";
             this->at(i).loc.print();
             std::cerr << ": ERROR: Expected token of kind '";
-            std::cerr << lexeme_kind_str_map.at(kinds[i]) << "'; got token '";
+            std::cerr << lexeme_kind_to_str(kinds[i]) << "'; got token '";
             std::cerr << this->at(i).str << "' of kind '";
-            std::cerr << lexeme_kind_str_map.at(this->at(i).kind);
+            std::cerr << lexeme_kind_to_str(this->at(i).kind);
             std::cerr << "'" << std::endl;
             exit(1);
         }
@@ -346,6 +346,18 @@ std::string lexeme_kind_to_str(const Lexeme_Kind kind) {
         case COLON: return ":";
         case EQUAL: return "=";
         case PLUS: return "+";
+        case MINUS: return "-";
+        case MUL: return "*";
+        case DIV: return "/";
+        case MOD: return "%";
+        case POW: return "**";
+        case AND: return "&";
+        case BIT_AND: return "&&";
+        case OR: return "||";
+        case BIT_OR: return "|";
+        case BIT_XOR: return "^";
+        case COMP_NOT_EQUAL: return "!=";
+        case NOT: return "!";
     }
     return "";
 }

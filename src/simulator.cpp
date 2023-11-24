@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <optional>
 #include <cassert>
+#include <math.h>
 #include "parser.hpp"
 #include "simulator.hpp"
 #include "builtins.hpp"
@@ -21,24 +22,53 @@ Expr eval(const Lexeme_Kind op, const Expr expr1, const Expr expr2) {
         case INT: {
             switch (op) {
                 case PLUS: return *(new Expr(expr1.int_val()+expr2.int_val()));
+                case MINUS: return *(new Expr(expr1.int_val()-expr2.int_val()));
+                case MUL: return *(new Expr(expr1.int_val()*expr2.int_val()));
+                case DIV: return *(new Expr(expr1.int_val()/expr2.int_val()));
+                case MOD: return *(new Expr(expr1.int_val()%expr2.int_val()));
+                case POW: return *(new Expr((int)pow(expr1.int_val(), expr2.int_val())));
+                case BIT_AND: return *(new Expr(expr1.int_val()&expr2.int_val()));
+                case BIT_OR: return *(new Expr(expr1.int_val()|expr2.int_val()));
+                case BIT_XOR: return *(new Expr(expr1.int_val()^expr2.int_val()));
                 default:
                     std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
                     std::cerr << "ERROR: Invalid operator '" << lexeme_kind_to_str(op);
                     std::cerr << "' for datatype '" << expr_kind_to_str(expr1.kind) << "'" << std::endl;
                     exit(1);
             }
-            default:
-                std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
-                std::cerr << "ERROR: Invalid expression "; expr1.print();
-                std::cerr << " " << lexeme_kind_to_str(op) << " "; expr2.print();
-                std::cerr << std::endl;
-                exit(1);
         } break;
+        case STR: {
+            switch (op) {
+                case PLUS: return *(new Expr(expr1.str_val()+expr2.str_val()));
+                default:
+                    std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
+                    std::cerr << "ERROR: Invalid operator '" << lexeme_kind_to_str(op);
+                    std::cerr << "' for datatype '" << expr_kind_to_str(expr1.kind) << "'" << std::endl;
+                    exit(1);
+            }
+        } break;
+        case BOOL: {
+            switch (op) {
+                case AND: return *(new Expr(expr1.bool_val()&&expr2.bool_val()));
+                case OR: return *(new Expr(expr1.bool_val()||expr2.bool_val()));
+                default:
+                    std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
+                    std::cerr << "ERROR: Invalid operator '" << lexeme_kind_to_str(op);
+                    std::cerr << "' for datatype '" << expr_kind_to_str(expr1.kind) << "'" << std::endl;
+                    exit(1);
+            }
+        } break;
+        default:
+            std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
+            std::cerr << "ERROR: Invalid expression "; expr1.print();
+            std::cerr << " " << lexeme_kind_to_str(op) << " "; expr2.print();
+            std::cerr << std::endl;
+            exit(1);
     }
     return {};
 }
 
-Expr mix_to_expr(const Expr expr, Expr_Kind kind, Var_Map* vars) {
+Expr mix_to_expr(const Expr expr, Expr_Kind kind, Var_Map* vars, bool type_check) {
     if (expr.kind != _MIX) return expr;
     assert(expr.val1 != nullptr);
     assert(expr.val2 != nullptr);
@@ -54,7 +84,7 @@ Expr mix_to_expr(const Expr expr, Expr_Kind kind, Var_Map* vars) {
         std::cerr << "' != '" << expr_kind_to_str(expr2.kind) << "'" << std::endl;
         exit(1);
     }
-    if (expr1.kind != kind) {
+    if (type_check && expr1.kind != kind) {
         std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
         std::cerr << "ERROR: Expected type '" << expr_kind_to_str(kind);
         std::cerr << "', but got '" << expr_kind_to_str(expr1.kind) << "'" << std::endl;
@@ -63,9 +93,9 @@ Expr mix_to_expr(const Expr expr, Expr_Kind kind, Var_Map* vars) {
     return eval(expr.op, expr1, expr2);
 }
 
-Expr fun_call_to_expr(const Expr expr, const Expr_Kind kind, Var_Map* vars) {
+Expr fun_call_to_expr(const Expr expr, const Expr_Kind kind, Var_Map* vars, bool type_check) {
     if (expr.kind != FUN_CALL) {
-        if (!are_expr_kinds_compatible(kind, expr.kind)) {
+        if (type_check && !are_expr_kinds_compatible(kind, expr.kind)) {
             std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
             std::cerr << "ERROR: Type mismatch, expected type '" << expr_kind_to_str(kind);
             std::cerr << "'; but got argument of type '";
@@ -74,7 +104,7 @@ Expr fun_call_to_expr(const Expr expr, const Expr_Kind kind, Var_Map* vars) {
         } else return expr;
     }
     Fun fun = get_fun(expr.fun_call());
-    if (!are_expr_kinds_compatible(kind, fun.return_type)) {
+    if (type_check && !are_expr_kinds_compatible(kind, fun.return_type)) {
         std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
         std::cerr << "ERROR: Type mismatch, expected type '" << expr_kind_to_str(kind);
         std::cerr << "'; but function return type is '";
@@ -162,6 +192,8 @@ std::optional<Expr> eval_fun_call(
 
 std::optional<Expr> simul_fun_call(const Fun_Call fun_call, Var_Map* vars) {
     Fun_Call tmp = replace_vars_to_exprs(fun_call, vars);
+    for (size_t i = 0; i < tmp.args.size(); ++i)
+        tmp.args[i] = mix_to_expr(tmp.args[i], ANY, vars, false);
     if (!mapper(tmp)) return eval_fun_call(get_fun(fun_call), tmp, vars);
     return {};
 }
@@ -286,7 +318,10 @@ std::optional<Expr> simul_stmt(
                         exit(1);
                     }
                     global_vars.find(var.name)->second.expr = expr;
-                } else global_vars[var.name] = var;
+                } else {
+                    var.expr = expr;
+                    global_vars[var.name] = var;
+                }
             } else {
                 if (vars->find(var.name) != vars->end()) {
                     if (!vars->at(var.name).mut) {
