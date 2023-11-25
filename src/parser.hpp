@@ -12,6 +12,7 @@ typedef struct Expr Expr;
 typedef struct Stmt Stmt;
 typedef struct If If;
 typedef struct Var Var;
+typedef struct While While;
 
 typedef struct Fun_Call {
     std::string name = "";
@@ -87,6 +88,14 @@ struct Var {
     std::optional<Expr> expr = {};
 };
 
+struct While {
+    Expr condition;
+    std::vector<Stmt> block = {};
+public:
+    While() {}
+    While(Lexer*);
+};
+
 struct Stmt {
     typedef enum {
         FUN_DEF,
@@ -94,6 +103,7 @@ struct Stmt {
         EXPR,
         VAR,
         RETURN,
+        WHILE,
     } Stmt_Kind;
     Stmt_Kind kind;
     typedef struct Stmt_Val {
@@ -101,6 +111,7 @@ struct Stmt {
         If if_cond;
         Expr expr;
         Var var;
+        While while_block;
     } Stmt_Val;
     Stmt_Val val;
 public:
@@ -108,10 +119,12 @@ public:
     Stmt(const If);
     Stmt(const Expr);
     Stmt(const Var);
+    Stmt(const While);
     Fun fun() const;
     If if_cond() const;
     Expr expr() const;
     Var var() const;
+    While while_block() const;
     void print() const;
 };
 

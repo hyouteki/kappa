@@ -11,7 +11,8 @@
 
 #define Var_Map std::unordered_map<std::string, Var>
 
-Expr reduce_to_basic_expr(const Expr, const Expr_Kind, Var_Map*);
+bool eval_condition(const Expr, Var_Map*);
+Expr reduce_to_basic_expr(const Expr, const Expr_Kind, Var_Map*, bool = true);
 Expr eval(const Lexeme_Kind, const Expr, const Expr);
 Expr mix_to_expr(const Expr, Expr_Kind, Var_Map*, bool = true);
 Expr fun_call_to_expr(const Expr, const Expr_Kind, Var_Map*, bool = true);

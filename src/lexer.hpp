@@ -26,11 +26,16 @@ typedef enum {
     POW,
     AND,
     OR,
-    COMP_NOT_EQUAL,
-    NOT,
     BIT_AND,
     BIT_OR,
     BIT_XOR,
+    COMP_EQUAL, // ==
+    COMP_NOT_EQUAL, // !=
+    COMP_LT_EQUAL, // <=
+    COMP_GT_EQUAL, // >=
+    COMP_LT, // <
+    COMP_GT, // >
+    NOT,
 } Lexeme_Kind;
 
 typedef struct Location {

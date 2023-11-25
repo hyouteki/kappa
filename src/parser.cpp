@@ -26,6 +26,12 @@ std::unordered_set<Lexeme_Kind> operators = {
     OR,
     BIT_OR,
     BIT_XOR,
+    COMP_EQUAL,
+    COMP_NOT_EQUAL,
+    COMP_LT,
+    COMP_GT,
+    COMP_LT_EQUAL,
+    COMP_GT_EQUAL,
 };
 
 Expr::Expr(int num) {
@@ -181,6 +187,30 @@ void If::print() const {
     std::cout << "}";
 }
 
+While::While(Lexer* lexer) {
+    lexer->assert_lexeme_front("while");
+    lexer->del_front();
+    lexer->assert_lexeme_front(OPEN_PAREN);
+    lexer->del_front();
+    std::optional<Expr> out = parse_expr(lexer);
+    if (!out) {
+        std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
+        std::cerr << lexer->filename << ":"; lexer->front().loc.print();
+        std::cerr << ": ERROR: While condition has not been provided" << std::endl;
+        exit(1);
+    }
+    this->condition = *out;
+    lexer->assert_lexeme_front(CLOSE_PAREN);
+    lexer->del_front();
+    lexer->assert_lexeme_front(OPEN_CURLY);
+    lexer->del_front();
+    while (!lexer->front().equal(CLOSE_CURLY)) {
+        std::optional<Stmt> out = iter_lexer(lexer);
+        if (out) this->block.push_back(*out);
+    }
+    lexer->del_front();
+}
+
 Stmt::Stmt(const Fun fun) {
     this->kind = FUN_DEF;
     this->val.fun = fun;
@@ -199,6 +229,11 @@ Stmt::Stmt(const Expr expr) {
 Stmt::Stmt(const Var var) {
     this->kind = VAR;
     this->val.var = var;
+}
+
+Stmt::Stmt(const While while_block) {
+    this->kind = WHILE;
+    this->val.while_block = while_block;
 }
 
 Fun Stmt::fun() const {
@@ -236,6 +271,16 @@ Var Stmt::var() const {
         exit(1);
     }
     return this->val.var;
+}
+
+While Stmt::while_block() const {
+    if (this->kind != WHILE) {
+        std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
+        std::cerr << "ERROR: Expected Expr_Type `WHILE`; got '";
+        std::cerr << stmt_kind_to_str(this->kind) << "'" << std::endl;
+        exit(1);
+    }
+    return this->val.while_block;
 }
 
 void Stmt::print() const {
@@ -354,6 +399,7 @@ std::optional<Stmt> iter_lexer(Lexer* lexer) {
     }
     else if (lexer->front().equal("fun")) return *(new Stmt(Fun(lexer)));
     else if (lexer->front().equal("if")) return *(new Stmt(If(lexer)));
+    else if (lexer->front().equal("while")) return *(new Stmt(While(lexer)));
     else if (lexer->front().equal("var") || lexer->front().equal("val"))
         return *(new Stmt(assign_var(lexer)));
     std::optional<Stmt> out = parse_expr_stmt(lexer);

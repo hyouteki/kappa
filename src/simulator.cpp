@@ -13,8 +13,24 @@
 std::unordered_map<std::string, Fun> funs;
 Var_Map global_vars;
 
-Expr reduce_to_basic_expr(const Expr expr, const Expr_Kind kind, Var_Map* vars) {
-    return fun_call_to_expr(mix_to_expr(expr, kind, vars), kind, vars);
+bool eval_condition(const Expr expr, Var_Map* vars) {
+    Expr tmp = reduce_to_basic_expr(expr, ANY, vars, false);
+    switch (tmp.kind) {
+        case INT: return tmp.int_val() > 0;
+        case STR: return tmp.str_val() != "";
+        case BOOL: return tmp.bool_val();
+        case NULL_EXPR: return false;
+        default:
+            std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
+            std::cerr << "ERROR: Invalid Expr_Kind '";
+            std::cerr << expr_kind_to_str(tmp.kind) << "'" << std::endl;
+            exit(1);
+    }
+    return false;
+}
+
+Expr reduce_to_basic_expr(const Expr expr, const Expr_Kind kind, Var_Map* vars, bool type_check) {
+    return fun_call_to_expr(mix_to_expr(expr, kind, vars, type_check), kind, vars, type_check);
 }
 
 Expr eval(const Lexeme_Kind op, const Expr expr1, const Expr expr2) {
@@ -30,6 +46,12 @@ Expr eval(const Lexeme_Kind op, const Expr expr1, const Expr expr2) {
                 case BIT_AND: return *(new Expr(expr1.int_val()&expr2.int_val()));
                 case BIT_OR: return *(new Expr(expr1.int_val()|expr2.int_val()));
                 case BIT_XOR: return *(new Expr(expr1.int_val()^expr2.int_val()));
+                case COMP_EQUAL: return *(new Expr(expr1.int_val()==expr2.int_val()));
+                case COMP_NOT_EQUAL: return *(new Expr(expr1.int_val()!=expr2.int_val()));
+                case COMP_LT_EQUAL: return *(new Expr(expr1.int_val()<=expr2.int_val()));
+                case COMP_GT_EQUAL: return *(new Expr(expr1.int_val()>=expr2.int_val()));
+                case COMP_LT: return *(new Expr(expr1.int_val()<expr2.int_val()));
+                case COMP_GT: return *(new Expr(expr1.int_val()>expr2.int_val()));
                 default:
                     std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
                     std::cerr << "ERROR: Invalid operator '" << lexeme_kind_to_str(op);
@@ -40,6 +62,10 @@ Expr eval(const Lexeme_Kind op, const Expr expr1, const Expr expr2) {
         case STR: {
             switch (op) {
                 case PLUS: return *(new Expr(expr1.str_val()+expr2.str_val()));
+                case COMP_EQUAL: return *(new Expr(expr1.str_val()==expr2.str_val()));
+                case COMP_NOT_EQUAL: return *(new Expr(expr1.str_val()!=expr2.str_val()));
+                case COMP_LT: return *(new Expr(expr1.str_val()<expr2.str_val()));
+                case COMP_GT: return *(new Expr(expr1.str_val()>expr2.str_val()));
                 default:
                     std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
                     std::cerr << "ERROR: Invalid operator '" << lexeme_kind_to_str(op);
@@ -51,6 +77,8 @@ Expr eval(const Lexeme_Kind op, const Expr expr1, const Expr expr2) {
             switch (op) {
                 case AND: return *(new Expr(expr1.bool_val()&&expr2.bool_val()));
                 case OR: return *(new Expr(expr1.bool_val()||expr2.bool_val()));
+                case COMP_EQUAL: return *(new Expr(expr1.bool_val()==expr2.bool_val()));
+                case COMP_NOT_EQUAL: return *(new Expr(expr1.bool_val()!=expr2.bool_val()));
                 default:
                     std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
                     std::cerr << "ERROR: Invalid operator '" << lexeme_kind_to_str(op);
@@ -355,6 +383,11 @@ std::optional<Expr> simul_stmt(
                 exit(1);
             }
             return stmt.expr();
+        } break;
+        case Stmt::WHILE: {
+            While while_block = stmt.while_block();
+            while (eval_condition(while_block.condition, vars))
+                simul(while_block.block, vars);
         } break;
         default:
             std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;

@@ -8,8 +8,9 @@
 #include "lexer.hpp"
 
 std::vector<std::string> DEFAULT_TOKEN_STRS = {
-    "(", ")", "{", ";", "}", ",", ":", "!=", "=", "!",
-    "+", "-", "**", "*", "/", "%", "&&", "&", "||", "|", "^",
+    "(", ")", "{", ";", "}", ",", ":", "!=", "==", "=", "<=",
+    "<", "!", ">=", ">", "+", "-", "**", "*", "/", "%", "&&",
+    "&", "||", "|", "^",
 };
 
 std::unordered_map<std::string, Lexeme_Kind> str_lexeme_kind_map = {
@@ -22,6 +23,11 @@ std::unordered_map<std::string, Lexeme_Kind> str_lexeme_kind_map = {
     {":", COLON},
     {"=", EQUAL},
     {"!=", COMP_NOT_EQUAL},
+    {"==", COMP_EQUAL},
+    {"<=", COMP_LT_EQUAL},
+    {">=", COMP_GT_EQUAL},
+    {"<", COMP_LT},
+    {">", COMP_GT},
     {"!", NOT},
     {"+", PLUS},
     {"-", MINUS},
@@ -357,6 +363,11 @@ std::string lexeme_kind_to_str(const Lexeme_Kind kind) {
         case BIT_OR: return "|";
         case BIT_XOR: return "^";
         case COMP_NOT_EQUAL: return "!=";
+        case COMP_EQUAL: return "==";
+        case COMP_LT_EQUAL: return "<=";
+        case COMP_GT_EQUAL: return ">=";
+        case COMP_LT: return "<";
+        case COMP_GT: return ">";
         case NOT: return "!";
     }
     return "";

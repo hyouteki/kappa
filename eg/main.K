@@ -29,27 +29,34 @@
 # print("If end\n");
 
 
-var x: int = 0;
+# var x: int = 0;
+#
+# x = 5 ** 2;
+# x = x * 3;
+#
+# print("and =", true && false, "\n");
+# print("or  =", true || false, "\n");
+#
+# print("4 & 5 = ", 4 & 5, "\n");
+# print("4 | 5 = ", 4 | 5, "\n");
+# print("4 ^ 5 = ", 4 ^ 5, "\n");
+#
+# val z: str = "kap" + "pa";
+# print(z, "\n");
+#
+# fun hello(): null {
+#     var y: int = 3 + 4;
+#     y = 2 + y;
+#     print(y, "\n");
+# }
+#
+# hello();
+#
+# print(x, "\n");
 
-x = 5 ** 2;
-x = x * 3;
+var x: int = 1;
 
-print("and =", true && false, "\n");
-print("or  =", true || false, "\n");
-
-print("4 & 5 = ", 4 & 5, "\n");
-print("4 | 5 = ", 4 | 5, "\n");
-print("4 ^ 5 = ", 4 ^ 5, "\n");
-
-val z: str = "kap" + "pa";
-print(z, "\n");
-
-fun hello(): null {
-    var y: int = 3 + 4;
-    y = 2 + y;
-    print(y, "\n");
+while (x <= 5) {
+    print(x, "\n");
+    x = x + 1;
 }
-
-hello();
-
-print(x, "\n");
