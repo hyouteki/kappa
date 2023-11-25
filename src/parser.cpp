@@ -424,7 +424,7 @@ Fun::Fun(Lexer *lexer) {
     lexer->del_front();
     lexer->assert_lexeme_front(OPEN_PAREN);
     lexer->del_front();
-    while (!lexer->front().equal(CLOSE_PAREN)) {
+    while (!lexer->is_lexeme_front(CLOSE_PAREN)) {
         Var* var = new Var();
         lexer->assert_lexeme_front(NAME);
         var->name = lexer->front().str;
@@ -434,7 +434,7 @@ Fun::Fun(Lexer *lexer) {
         lexer->assert_lexeme_front(NAME);
         var->type = str_to_expr_kind(lexer);
         lexer->del_front();
-        if (lexer->front().equal(EQUAL)) {
+        if (lexer->is_lexeme_front(EQUAL)) {
             lexer->del_front();
             Expr expr = *parse_expr(lexer);
             if (var->type != expr.kind) {
@@ -460,7 +460,7 @@ Fun::Fun(Lexer *lexer) {
     lexer->assert_lexeme_front(OPEN_CURLY);
     lexer->del_front();
     bool flag = true;
-    while (!lexer->front().equal(CLOSE_CURLY)) {
+    while (!lexer->is_lexeme_front(CLOSE_CURLY)) {
         if (lexer->is_lexeme_front("return") && flag) {
             lexer->del_front();
             Expr return_expr = *parse_expr(lexer);
