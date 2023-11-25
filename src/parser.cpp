@@ -11,7 +11,7 @@
 
 std::unordered_set<std::string> reserved_strs = {
     "fun", "if", "else", "true", "false", "var", "int", "while", "return",
-    "val", "bool", "str", "null",
+    "val", "bool", "str", "null", "break", "continue"
 };
 
 std::unordered_set<Lexeme_Kind> operators = {
@@ -50,7 +50,7 @@ Expr::Expr(std::string str) {
 }
 
 std::string Expr::str_val() const {
-    if (this->kind != STR && this->kind != _VAR) {
+    if (this->kind != STR && this->kind != _VAR && this->kind != _WF) {
         std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
         std::cerr << "ERROR: Expected Expr_Type `STR`; got '";
         std::cerr << this->kind << "'" << std::endl;
@@ -146,8 +146,14 @@ If::If(Lexer* lexer) {
     lexer->del_front();
     lexer->assert_lexeme_front(OPEN_PAREN);
     lexer->del_front();
-    std::optional<Stmt> tmp = iter_lexer(lexer);
-    this->condition = (tmp)? new Stmt(*tmp): nullptr;
+    std::optional<Expr> out = parse_expr(lexer);
+    if (!out) {
+        std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
+        std::cerr << lexer->filename << ":"; lexer->front().loc.print();
+        std::cerr << ": ERROR: If condition has not been provided" << std::endl;
+        exit(1);
+    }
+    this->condition = *out;
     lexer->assert_lexeme_front(CLOSE_PAREN);
     lexer->del_front();
     lexer->assert_lexeme_front(OPEN_CURLY);
@@ -171,7 +177,7 @@ If::If(Lexer* lexer) {
 
 void If::print() const {
     std::cout << "if (";
-    this->condition->print();
+    this->condition.print();
     std::cout << ") {";
     for (size_t i = 0; i < this->then_block.size(); ++i) {
         this->then_block[i].print();
@@ -574,6 +580,12 @@ std::optional<Stmt> parse_expr_stmt(Lexer* lexer) {
     Expr expr = *out;
     if (expr.kind != _VAR) return *(new Stmt(expr));
     std::string name = expr.str_val();
+    if (name == "break" || name == "continue") {
+        Expr* tmp = new Expr();
+        tmp->kind = _WF;
+        tmp->val.str_val = name;
+        return *(new Stmt(*tmp));
+    }
     lexer->assert_lexeme_front(EQUAL);
     lexer->del_front();
     out = parse_expr(lexer);

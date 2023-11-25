@@ -123,13 +123,16 @@ Expr mix_to_expr(const Expr expr, Expr_Kind kind, Var_Map* vars, bool type_check
 
 Expr fun_call_to_expr(const Expr expr, const Expr_Kind kind, Var_Map* vars, bool type_check) {
     if (expr.kind != FUN_CALL) {
-        if (type_check && !are_expr_kinds_compatible(kind, expr.kind)) {
+        std::optional<Expr> out = var_expr_to_expr(expr, vars);
+        assert(out);
+        Expr tmp = *out;
+        if (type_check && !are_expr_kinds_compatible(kind, tmp.kind)) {
             std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
             std::cerr << "ERROR: Type mismatch, expected type '" << expr_kind_to_str(kind);
             std::cerr << "'; but got argument of type '";
-            std::cerr << expr_kind_to_str(expr.kind) << "'" << std::endl;
+            std::cerr << expr_kind_to_str(tmp.kind) << "'" << std::endl;
             exit(1);
-        } else return expr;
+        } else return tmp;
     }
     Fun fun = get_fun(expr.fun_call());
     if (type_check && !are_expr_kinds_compatible(kind, fun.return_type)) {
@@ -244,37 +247,10 @@ std::optional<Expr> simul_stmt(
             funs[stmt.fun().name] = stmt.fun();
         } break;
         case Stmt::IF: {
-            Stmt* condition = stmt.if_cond().condition;
-            if (condition->kind != Stmt::EXPR) {
-                std::cerr << __FILE__ << ":" << __FUNCTION__ << ":";
-                std::cerr << __LINE__ << std::endl;
-                std::cerr << "ERROR: Invalid condition" << std::endl;
-                exit(1);
-            }
-            Expr expr = condition->val.expr;
-            switch (expr.kind) {
-                case BOOL:
-                    if (expr.bool_val()) simul(stmt.if_cond().then_block, vars);
-                    else simul(stmt.if_cond().else_block, vars);
-                    break;
-                case FUN_CALL: {
-                    std::optional<Expr> out = simul_fun_call(expr.fun_call(), vars);
-                    if (out) {
-                        expr = *out;
-                        switch (expr.kind) {
-                            case BOOL:
-                                if (expr.bool_val()) simul(stmt.if_cond().then_block, vars);
-                                else simul(stmt.if_cond().else_block, vars);
-                                break;
-                            default:
-                                simul(stmt.if_cond().then_block, vars);
-                                exit(1);
-                        }
-                    } else simul(stmt.if_cond().else_block, vars);
-                } break;
-                default:
-                    simul(stmt.if_cond().then_block, vars);
-            }
+            If if_cond = stmt.if_cond();
+            if (eval_condition(if_cond.condition, vars))
+                return simul(if_cond.then_block, vars, can_return, is_global);
+            else return simul(if_cond.else_block, vars, can_return, is_global);
         } break;
         case Stmt::VAR: {
             Var var = stmt.var();
@@ -386,8 +362,16 @@ std::optional<Expr> simul_stmt(
         } break;
         case Stmt::WHILE: {
             While while_block = stmt.while_block();
-            while (eval_condition(while_block.condition, vars))
-                simul(while_block.block, vars);
+            while (eval_condition(while_block.condition, vars)) {
+                std::optional<Expr> out =
+                    simul(while_block.block, vars, can_return, is_global);
+                if (!out) continue;
+                Expr expr = *out;
+                if (expr.kind == _WF) {
+                    if (expr.str_val() == "break") break;
+                    if (expr.str_val() == "continue") continue;
+                }
+            }
         } break;
         default:
             std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
@@ -404,6 +388,10 @@ std::optional<Expr> simul(
     const bool is_global
 ) {
     for (Stmt stmt: stmts) {
+        if (stmt.kind == Stmt::EXPR && stmt.expr().kind == _WF) {
+            if (stmt.expr().str_val() == "continue" ||
+                stmt.expr().str_val() == "break") return stmt.expr();
+        }
         std::optional<Expr> out = simul_stmt(stmt, vars, can_return, is_global);
         if (out) return *out;
     }

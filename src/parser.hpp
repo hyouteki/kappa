@@ -33,6 +33,7 @@ typedef enum {
     _VAR,
     _RE_ASS,
     _MIX,
+    _WF,
 } Expr_Kind;
 
 struct Expr {
@@ -72,11 +73,11 @@ public:
 } Fun;
 
 struct If {
-    Stmt* condition;
+    Expr condition;
     std::vector<Stmt> then_block = {};
     std::vector<Stmt> else_block = {};
 public:
-    If(): condition(nullptr), then_block(), else_block() {}
+    If() {}
     If(Lexer*);
     void print() const;
 };

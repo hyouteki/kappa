@@ -56,7 +56,23 @@
 
 var x: int = 1;
 
-while (x <= 5) {
-    print(x, "\n");
+# print("hello\n");
+
+while (x <= 10) {
+    if (x == 8) {
+        x = 1 + x;
+        continue;
+    }
+    var y: int = x;
+    if (x%2) {
+        while (y <= 5) {
+            y = y + 1;
+        }
+        x = y;
+    } else {
+        print("even", x, "\n");
+    }
     x = x + 1;
 }
+
+print(x, "\n");
