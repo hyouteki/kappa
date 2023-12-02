@@ -95,6 +95,7 @@ struct While {
 public:
     While() {}
     While(Lexer*);
+	void print() const;
 };
 
 struct Stmt {
@@ -141,5 +142,6 @@ std::string stmt_kind_to_str(const Stmt::Stmt_Kind);
 Expr_Kind str_to_expr_kind(Lexer*);
 bool are_expr_kinds_compatible(const Expr_Kind, const Expr_Kind);
 Expr assert_null_check(Lexer*, std::optional<Expr>);
+Stmt parse_return_stmt(Lexer*);
 
 #endif // KAPPA_PARSER_HPP_

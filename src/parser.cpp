@@ -79,6 +79,18 @@ Fun_Call Expr::fun_call() const {
     return this->val.fun_call;
 }
 
+void While::print() const {
+	std::cout << "while (";
+	this->condition.print();
+	std::cout << ") {" << std::endl;
+	for (Stmt stmt: this->block) {
+		std::cout << "\t";
+		stmt.print();
+		std::cout << std::endl;
+	}
+	std::cout << "}";
+}
+
 int Expr::int_val() const {
     if (this->kind != INT) {
         std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
@@ -110,35 +122,40 @@ void Expr::print() const {
         case ANY:
         case STR:
             std::cout << this->str_val();
-            break;
+            return;
         case INT:
             std::cout << this->int_val();
-            break;
+            return;
         case NULL_EXPR:
             std::cout << "null";
-            break;
+            return;
         case BOOL:
             if (this->bool_val()) std::cout << "true";
             else std::cout << "false";
-            break;
+            return;
         case _VAR:
             std::cout << this->str_val();
-            break;
+            return;
         case FUN_CALL:
             this->val.fun_call.print();
-            break;
+            return;
         case _MIX:
             assert(this->val1);
             assert(this->val2);
             this->val1->print();
             std::cout << " " << lexeme_kind_to_str(this->op) << " ";
             this->val2->print();
-            break;
-        default:
-            std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
-            std::cerr << "ERROR: Invalid Expr_Kind" << std::endl;
-            exit(1);
+            return;
+		case _RE_ASS:
+			std::cout << this->str_val() << " = ";
+			return;
+		case _WF:
+			std::cout << this->str_val();
+			return;
     }
+	std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
+    std::cerr << "ERROR: Invalid Expr_Kind" << std::endl;
+    exit(1);
 }
 
 If::If(Lexer* lexer) {
@@ -178,17 +195,19 @@ If::If(Lexer* lexer) {
 void If::print() const {
     std::cout << "if (";
     this->condition.print();
-    std::cout << ") {";
+    std::cout << ") {" << std::endl;
     for (size_t i = 0; i < this->then_block.size(); ++i) {
-        this->then_block[i].print();
-        if (i < this->then_block.size()-1) std::cout << std::endl;
+		std::cout << "\t";
+		this->then_block[i].print();
+		std::cout << std::endl;
     }
     std::cout << "}";
     if (this->else_block.empty()) return;
-    std::cout << " else {";
+    std::cout << " else {" << std::endl;
     for (size_t i = 0; i < this->else_block.size(); ++i) {
-        this->else_block[i].print();
-        if (i < this->else_block.size()-1) std::cout << std::endl;
+		std::cout << "\t";
+		this->else_block[i].print();
+        std::cout << std::endl;
     }
     std::cout << "}";
 }
@@ -303,12 +322,16 @@ void Stmt::print() const {
         case RETURN:
             std::cout << "return"; this->expr().print();
             break;
+		case WHILE:
+			this->while_block().print();
+			break;
         case VAR:
             std::cout << this->var().name << " = "; (*this->var().expr).print();
             break;
         default:
             std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
-            std::cerr << "ERROR: Invalid Stmt_Kind" << std::endl;
+			std::cerr << "ERROR: Invalid Stmt_Kind '" << stmt_kind_to_str(this->kind);
+			std::cerr << "'" << std::endl;
             exit(1);
     }
 }
@@ -403,9 +426,10 @@ std::optional<Stmt> iter_lexer(Lexer* lexer) {
         lexer->del_front();
         return {};
     }
-    else if (lexer->front().equal("fun")) return *(new Stmt(Fun(lexer)));
-    else if (lexer->front().equal("if")) return *(new Stmt(If(lexer)));
-    else if (lexer->front().equal("while")) return *(new Stmt(While(lexer)));
+    else if (lexer->is_lexeme_front("fun")) return *(new Stmt(Fun(lexer)));
+    else if (lexer->is_lexeme_front("if")) return *(new Stmt(If(lexer)));
+    else if (lexer->is_lexeme_front("while")) return *(new Stmt(While(lexer)));
+	else if (lexer->is_lexeme_front("return")) return parse_return_stmt(lexer); 
     else if (lexer->front().equal("var") || lexer->front().equal("val"))
         return *(new Stmt(assign_var(lexer)));
     std::optional<Stmt> out = parse_expr_stmt(lexer);
@@ -459,42 +483,9 @@ Fun::Fun(Lexer *lexer) {
     lexer->del_front();
     lexer->assert_lexeme_front(OPEN_CURLY);
     lexer->del_front();
-    bool flag = true;
     while (!lexer->is_lexeme_front(CLOSE_CURLY)) {
-        if (lexer->is_lexeme_front("return") && flag) {
-            lexer->del_front();
-            Expr return_expr = *parse_expr(lexer);
-            if (this->return_type != ANY && return_expr.kind != this->return_type) {
-                std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
-                std::cerr << lexer->filename << ":"; lexer->front().loc.print();
-                std::cerr << ": ERROR: Type mismatch, return type expected was '";
-                std::cerr << expr_kind_to_str(this->return_type) << "'; but got '";
-                std::cerr << expr_kind_to_str(return_expr.kind) << "'" << std::endl;
-                exit(1);
-            }
-            Stmt* stmt = new Stmt(return_expr);
-            stmt->kind = Stmt::RETURN;
-            this->block.push_back(*stmt);
-            flag = false;
-        }
         std::optional<Stmt> out = iter_lexer(lexer);
-        if (out && flag) this->block.push_back(*out);
-        if (lexer->is_lexeme_front("return") && flag) {
-            lexer->del_front();
-            Expr return_expr = *parse_expr(lexer);
-            if (this->return_type != ANY && return_expr.kind != this->return_type) {
-                std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
-                std::cerr << lexer->filename << ":"; lexer->front().loc.print();
-                std::cerr << ": ERROR: Type mismatch, return type expected was '";
-                std::cerr << expr_kind_to_str(this->return_type) << "'; but got '";
-                std::cerr << expr_kind_to_str(return_expr.kind) << "'" << std::endl;
-                exit(1);
-            }
-            Stmt* stmt = new Stmt(return_expr);
-            stmt->kind = Stmt::RETURN;
-            this->block.push_back(*stmt);
-            flag = false;
-        }
+        if (out) this->block.push_back(*out);
     }
     lexer->del_front();
 }
@@ -552,11 +543,12 @@ std::string stmt_kind_to_str(const Stmt::Stmt_Kind kind) {
         case Stmt::EXPR: return "EXPR";
         case Stmt::VAR: return "VAR";
         case Stmt::RETURN: return "RETURN";
-        default:
-            std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
-            std::cerr << "ERROR: Invalid Expr_Kind " << kind << "'" << std::endl;
-            exit(1);
-    }
+		case Stmt::WHILE: return "WHILE";
+	} 
+   	std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
+   	std::cerr << "ERROR: Invalid Stmt_Kind " << kind << "'" << std::endl;
+   	exit(1);
+    return "";
 }
 
 Expr_Kind str_to_expr_kind(Lexer* lexer) {
@@ -614,4 +606,11 @@ Expr assert_null_check(Lexer* lexer, std::optional<Expr> expr) {
         exit(1);
     }
     return *expr;
+}
+
+Stmt parse_return_stmt(Lexer* lexer) {
+	lexer->del_front();
+    Stmt* stmt = new Stmt(*parse_expr(lexer));
+    stmt->kind = Stmt::RETURN;
+	return *stmt;
 }

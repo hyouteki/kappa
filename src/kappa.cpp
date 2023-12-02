@@ -9,6 +9,7 @@
 #include <fstream>
 #include "lexer.hpp"
 #include "parser.hpp"
+#include "print_parser.cpp"
 #include "simulator.hpp"
 
 std::vector<std::string> get_file_contents(std::string filename) {
@@ -42,6 +43,8 @@ int main(int argc, char* argv[]) {
     Lexer lexer = (Lexer){.content = content, .filename = filename};
     lexer.gen_lexemes();
     std::vector<Stmt> stmts = parse_lexer(&lexer);
+	print_parser(stmts);
+	return 0;
     std::unordered_map<std::string, Var> vars;
     simul(stmts, &vars, false, true);
     return 0;
