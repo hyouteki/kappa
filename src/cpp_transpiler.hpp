@@ -3,11 +3,10 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string>
+#include <vector>
 #include "parser.hpp"
 
-void write_header(const std::string filename);
-void transpile(const std::string filename, const std::vector<Stmt>);
-void exit_();
-
+void cpp_transpile(const std::string, const std::vector<Stmt>);
 
 #endif
