@@ -320,7 +320,7 @@ void Stmt::print() const {
             this->if_cond().print();
             break;
         case RETURN:
-            std::cout << "return"; this->expr().print();
+            std::cout << "return "; this->expr().print();
             break;
 		case WHILE:
 			this->while_block().print();
@@ -412,7 +412,13 @@ void Fun::print() const {
         std::cout << this->args[i].name;
         if (i < this->args.size()-1) std::cout << ", ";
     }
-    std::cout << ") {}";
+    std::cout << ") {" << std::endl;
+	for (Stmt stmt: this->block) {
+		std::cout << "\t";
+		stmt.print();
+		std::cout << std::endl;
+	}
+	std::cout << "}";
 }
 
 bool is_fun_call(const Lexer* lexer) {
