@@ -51,7 +51,7 @@ int main(int argc, char* argv[]) {
         exit(1);
 	}
 	std::string cpp_filename = filename.substr(0, filename.size()-2) + ".cpp";
-	cpp_transpile(filename, stmts);
+	cpp_transpile(cpp_filename, stmts);
 	return 0;
     std::unordered_map<std::string, Var> vars;
     simul(stmts, &vars, false, true);
