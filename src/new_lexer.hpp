@@ -70,11 +70,11 @@ public:
 class Lexer {
     std::vector<std::string> content;
     std::string filename;
-    std::vector<Token> tokens;
+	std::vector<Token> tokens;
 public:
 	Lexer(const std::vector<std::string> content, 
-		const std::string filename, const std::vector<Token> tokens)
-		: content(content), filename(filename), tokens(tokens) {}
+		const std::string filename)
+		: content(content), filename(filename) {}
     void print() const;
     bool empty() const;
     size_t size() const;

@@ -1,1 +1,3 @@
-Hello motostd::endl
+	fn main() {
+	print("Hello noto\n");
+}

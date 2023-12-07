@@ -19,22 +19,6 @@ std::unordered_map<std::string, int> str_to_token_kind = {
 	{"continue", Token::tok_continue}, {"str", Token::tok_type_str}, 
 	{"int", Token::tok_type_int}, {"bool", Token::tok_type_bool}};
 
-int strip_front(std::string *str) {
-    std::string tmp = "";
-    size_t col = 0;
-    bool flag = false;
-    for (char ch: *str) {
-        if (flag) tmp.push_back(ch);
-        else if (ch == ' ') ++col;
-        else {
-            tmp.push_back(ch);
-            flag = true;
-        }
-    }
-    *str = tmp;
-    return col;
-}
-
 bool starts_with(const std::string str, const std::string target) {
     if (str.size() < target.size()) return false;
     for (size_t i = 0; i < target.size(); ++i)
@@ -58,7 +42,7 @@ void Loc::print() const {
 }
 
 void Token::print() const {
-    this->loc.print(); std::cout << " ";
+    this->loc.print(); std::cout << "\t";
 	std::cout << this->str << ": ";
 	std::cout << token_kind_to_str(this->kind);
 }
@@ -76,8 +60,10 @@ bool Token::equal(const int kind) const {
 }
 
 void Lexer::print() const {
-    for (Token token: this->tokens)
-        token.print(); std::cout << std::endl;
+    for (Token token: this->tokens) {
+		token.print(); 
+		std::cout << std::endl;
+	}
 }
 
 bool Lexer::empty() const {
@@ -108,8 +94,16 @@ void Lexer::gen_tokens() {
     for (size_t i = 0; i < this->content.size(); ++i) {
         size_t col = 0;
         while (this->content[i] != "") {
-            col += strip_front(&this->content[i]);
-            if (this->content[i] == "") continue;
+			{
+				int x = 0;
+				for (char ch: this->content[i]) {
+					if (ch != ' ' && ch != '\t') break;
+					++x;
+				}
+				col += x;
+				this->content[i] = this->content[i].substr(x);
+			}
+			if (this->content[i] == "") continue;
         
 			int j = 0;
 			char ch = this->content[i][j];	
