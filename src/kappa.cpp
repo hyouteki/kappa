@@ -11,7 +11,7 @@
 #include "parser.hpp"
 #include "print_parser.cpp"
 #include "simulator.hpp"
-#include "cpp_transpiler.hpp"
+// #include "cpp_transpiler.hpp"
 
 std::vector<std::string> get_file_contents(std::string filename) {
     std::ifstream fd(filename);
@@ -45,13 +45,6 @@ int main(int argc, char* argv[]) {
     lexer.gen_lexemes();
     std::vector<Stmt> stmts = parse_lexer(&lexer);
 	print_parser(stmts);
-	if (filename.size() < 3) {
-		std::cerr << __FILE__ << ":" << __FUNCTION__ << ":" << __LINE__ << std::endl;
-        std::cerr << "ERROR: Invalid filename '" << filename << "'" << std::endl;
-        exit(1);
-	}
-	std::string cpp_filename = filename.substr(0, filename.size()-2) + ".cpp";
-	cpp_transpile(cpp_filename, stmts);
 	return 0;
     std::unordered_map<std::string, Var> vars;
     simul(stmts, &vars, false, true);
