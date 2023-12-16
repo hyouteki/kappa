@@ -24,7 +24,6 @@ fn main() {
     if args.len() < 3 { print_usage(); }
     let filepath: &str  = &args[2];
     let content: Vec<String> = get_content(&filepath);
-    println!("{:?}", content);
-    // let lexer: Lexer = Lexer::new(content, filepath.to_string());
-    // lexer.print();
+    let lexer: Lexer = Lexer::new(content, filepath.to_string());
+    lexer.print();
 }

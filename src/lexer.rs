@@ -69,8 +69,6 @@ impl Lexer {
         if self.content.len() == 0 {return;}
         for i in 0..self.content.len() {
             let mut col: usize = 0;
-            println!("{}", self.content[i]);
-            println!("{}", self.content[i].chars().nth(0).unwrap() as u32);
             while self.content[i].len() > 0 {
                 // trimming leading white spaces
                 {
@@ -82,7 +80,6 @@ impl Lexer {
                     col += x;
                     self.content[i] = self.content[i][x as usize..]
                         .to_string();
-                    println!("afspc: {}", self.content[i].chars().nth(0).unwrap());
                 }
 
                 if self.content[i].len() == 0 {break;}
@@ -122,7 +119,7 @@ impl Lexer {
                 }
 
                 if ch == '"' {
-                    let mut iden: String = String::from("");
+                    let mut iden: String = String::from("\"");
                     for k in 1..self.content[i].len() {
                         iden.push(self.content[i].chars().nth(k).unwrap());
                         if self.content[i].chars().nth(k) == Some('"') {break};
@@ -132,6 +129,7 @@ impl Lexer {
                             .to_string(), Some(Loc::from_usize(i+1, 
                                 col+iden.len()+1 as usize))); 
                     }
+                    j += iden.len();
                     self.tokens.push(Token::new_str(TOK_STR_LIT, 
                         iden, Loc::from_usize(i+1, col+1)));
                     col += j;
@@ -147,8 +145,6 @@ impl Lexer {
                     self.content[i] = self.content[i][1..].to_string();
                 }
             }
-            self.print();
-            println!("len: {}", self.content[i].len());
         }
     }
     pub fn new(content: Vec<String>, filename: String) -> Self {
