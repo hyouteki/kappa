@@ -2,6 +2,8 @@ use std::{io::{prelude::*, BufReader}};
 
 pub mod token;
 pub mod lexer;
+pub mod expr;
+use expr::{Expr};
 use lexer::{Lexer};
 
 fn print_usage() {
@@ -26,4 +28,6 @@ fn main() {
     let content: Vec<String> = get_content(&filepath);
     let lexer: Lexer = Lexer::new(content, filepath.to_string());
     lexer.print();
+    let expr: Expr = Expr::Str("hello moto".to_string());
+    println!("{}", expr);
 }
