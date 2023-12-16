@@ -17,7 +17,8 @@ std::unordered_map<std::string, int> str_to_token_kind = {
 	{"while", Token::tok_while}, {"var", Token::tok_var}, {"val", Token::tok_val}, 
 	{"return", Token::tok_return}, {"break", Token::tok_break}, 
 	{"continue", Token::tok_continue}, {"str", Token::tok_type_str}, 
-	{"int", Token::tok_type_int}, {"bool", Token::tok_type_bool}};
+	{"int", Token::tok_type_int}, {"bool", Token::tok_type_bool},
+	{"true", Token::tok_bool}, {"false", Token::tok_bool}};
 
 bool starts_with(const std::string str, const std::string target) {
     if (str.size() < target.size()) return false;
@@ -89,7 +90,7 @@ Token Lexer::front() const {
 }
 
 void Lexer::gen_tokens() {
-    std::vector<Token> tokens;
+	std::vector<Token> tokens;
     if (this->content.empty()) return;
     for (size_t i = 0; i < this->content.size(); ++i) {
         size_t col = 0;

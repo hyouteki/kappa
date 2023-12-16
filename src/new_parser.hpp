@@ -7,11 +7,13 @@
 #include <vector>
 #include <optional>
 #include <unordered_map>
-#include "lexer.hpp"
+#include "new_lexer.hpp"
 
 class Expr;
 class Num_Expr;
 class Var_Expr;
+class Bool_Expr;
+class Str_Lit_Expr;
 class Bin_Expr;
 class Call_Expr;
 class Block;
@@ -24,9 +26,11 @@ class Return_Stmt;
 std::optional<Expr> parse_expr(Lexer*);
 std::optional<Num_Expr> parse_num_expr(Lexer*);
 std::optional<Var_Expr> parse_var_expr(Lexer*);
+std::optional<Bool_Expr> parse_bool_expr(Lexer*);
+std::optional<Str_Lit_Expr> parse_str_lit_expr(Lexer*);
 std::optional<Bin_Expr> parse_bin_expr(Lexer*);
 std::optional<Call_Expr> parse_call_expr(Lexer*);
-std::optional<Block> parse_block(Lexer*);
+Block parse_block(Lexer*);
 std::optional<Stmt> parse_stmt(Lexer*);
 std::optional<Fun_Def_Stmt> parse_fun_def_stmt(Lexer*);
 std::optional<If_Stmt> parse_if_stmt(Lexer*);
@@ -49,15 +53,29 @@ public:
 class Var_Expr: public Expr {
 	std::string name;
 public:
-	Var_Expr(const std::string &name): name(name) {}
+	Var_Expr(const std::string name): name(name) {}
+	void print() const override;
+};
+
+class Bool_Expr: public Expr {
+	bool val;
+public:
+	Bool_Expr(const bool val): val(val) {}
+	void print() const override;
+};
+
+class Str_Lit_Expr: public Expr {
+	std::string str_lit;
+public:
+	Str_Lit_Expr(const std::string str_lit): str_lit(str_lit) {}
 	void print() const override;
 };
 
 class Bin_Expr: public Expr {
-	Lexeme_Kind op;
+	int op;
 	Expr left, right;
 public:
-	Bin_Expr(const Lexeme_Kind op, const Expr left, 
+	Bin_Expr(const int op, const Expr left, 
 		const Expr right): op(op), left(left), right(right) {}
 	void print() const override;
 };
@@ -78,6 +96,7 @@ public:
 	Block(const std::vector<Stmt> stmts, 
 		const std::unordered_map<std::string, 
 		Expr> vars): stmts(stmts), vars(vars) {};
+	void capture_vars(const std::unordered_map<std::string, Expr>);
 };
 
 class Stmt {
@@ -88,12 +107,12 @@ public:
 
 class Fun_Def_Stmt: public Stmt {
 	std::string name;
-	std::vector<Expr> args;
+	std::vector<std::string> args;
 	Expr return_expr;
 	Block block;
 public:
 	Fun_Def_Stmt(const std::string name, 
-		const std::vector<Expr> args, 
+		const std::vector<std::string> args, 
 		const Expr return_expr, const Block block)
 		: name(name), args(args), 
 		return_expr(return_expr), block(block) {}
