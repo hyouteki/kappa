@@ -1,28 +1,45 @@
 use crate::token::{Loc, Token, error};
 
-fn string_to_token_kind(s: &String) -> i32 {
+pub const TOK_FN: i32 = -1;
+pub const TOK_IF: i32 = -2;
+pub const TOK_ELSE: i32 = -3;
+pub const TOK_WHILE: i32 = -4;
+pub const TOK_VAR: i32 = -5;
+pub const TOK_VAL: i32 = -6;
+pub const TOK_RETURN: i32 = -7;
+pub const TOK_BREAK: i32 = -8;
+pub const TOK_CONTINUE: i32 = -9;
+pub const TOK_TYPE_INT: i32 = -10;
+pub const TOK_TYPE_STR: i32 = -11;
+pub const TOK_TYPE_BOOL: i32 = -12;
+pub const TOK_IDEN: i32 = -13;
+pub const TOK_INT: i32 = -14; 
+pub const TOK_STR_LIT: i32 = -15;
+pub const TOK_BOOL: i32 = -16;
+
+pub fn string_to_token_kind(s: &String) -> i32 {
     match s.as_str() {
         // keywords
-        "fn" => -1, 
-        "if" => -2, 
-        "else" => -3, 
-        "while" => -4, 
-        "var" => -5, 
-        "val" => -6,
+        "fn" => TOK_FN, 
+        "if" => TOK_IF, 
+        "else" => TOK_ELSE, 
+        "while" => TOK_WHILE, 
+        "var" => TOK_VAR, 
+        "val" => TOK_VAL,
         // control flow
-        "return" => -7, 
-        "break" => -8, 
-        "continue" => -9, 
+        "return" => TOK_RETURN, 
+        "break" => TOK_BREAK, 
+        "continue" => TOK_CONTINUE, 
         // datatypes
-        "int" => -10, 
-        "str" => -11, 
-        "bool" => -12, 
-        _ => -13, // iden
+        "int" => TOK_TYPE_INT, 
+        "str" => TOK_TYPE_STR, 
+        "bool" => TOK_TYPE_BOOL,
+        // vals
+        "true" => TOK_BOOL,
+        "false" => TOK_BOOL, 
+        _ => TOK_IDEN, // iden
     }
 }
-
-const TOK_INT: i32 = -14; 
-const TOK_STR_LIT: i32 = -15;
 
 pub struct Lexer {
     pub content: Vec<String>,
@@ -39,10 +56,14 @@ impl Lexer {
             println!("{}", token);
         }
     }
-    pub fn assert_token_front(&self) {
+    pub fn assert_token(&self) {
         if self.empty() { 
             error("expected a token".to_string());
         }
+    }
+    pub fn eat(&mut self) {
+        self.assert_token();
+        self.tokens = self.tokens[1..].to_vec();
     }
     pub fn error(&self, message: String, loc: Option<Loc>) {
         print!("{}:", self.filename);
@@ -54,7 +75,7 @@ impl Lexer {
             _ => self.front().loc.error(message),
         };
     }
-    pub fn assert_token_kind_front(&self, kind: i32) {
+    pub fn assert_token_kind(&self, kind: i32) {
         let token: Token = self.front();
         if token.kind != kind {
             token.loc.error(
@@ -62,7 +83,7 @@ impl Lexer {
                 .to_string());
         }
     }
-    pub fn is_token_kind_front(&self, kind: i32) -> bool {
+    pub fn is_token_kind(&self, kind: i32) -> bool {
         self.front().kind == kind
     }
     fn gen_tokens(&mut self) {
@@ -119,17 +140,20 @@ impl Lexer {
                 }
 
                 if ch == '"' {
-                    let mut iden: String = String::from("\"");
+                    let mut iden: String = String::from("");
+                    let mut flag = true;
                     for k in 1..self.content[i].len() {
+                        if self.content[i].chars().nth(k) == Some('"') {
+                            flag = false;
+                            break;
+                        }
                         iden.push(self.content[i].chars().nth(k).unwrap());
-                        if self.content[i].chars().nth(k) == Some('"') {break};
                     }
-                    if iden.chars().last().unwrap() != '"' {
-                        self.error("string literal not closed"
-                            .to_string(), Some(Loc::from_usize(i+1, 
-                                col+iden.len()+1 as usize))); 
+                    if flag {
+                        self.error("string literal not closed".to_string(), 
+                            Some(Loc::from_usize(i+1, col+iden.len()+1 as usize))); 
                     }
-                    j += iden.len();
+                    j += iden.len() + 2; // +2 for ""
                     self.tokens.push(Token::new_str(TOK_STR_LIT, 
                         iden, Loc::from_usize(i+1, col+1)));
                     col += j;

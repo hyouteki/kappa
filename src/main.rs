@@ -3,8 +3,10 @@ use std::{io::{prelude::*, BufReader}};
 pub mod token;
 pub mod lexer;
 pub mod expr;
+pub mod stmt;
 use expr::{Expr};
 use lexer::{Lexer};
+
 
 fn print_usage() {
     println!("usage: kappa <subcommand> [<args>]");
