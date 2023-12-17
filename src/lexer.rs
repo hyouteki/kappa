@@ -41,6 +41,28 @@ pub fn string_to_token_kind(s: &String) -> i32 {
     }
 }
 
+pub fn token_kind_to_str(kind: i32) -> String {
+    match kind {
+        TOK_FN => String::from("fn"),
+        TOK_IF => String::from("if"),
+        TOK_ELSE => String::from("else"),
+        TOK_WHILE => String::from("while"),
+        TOK_VAR => String::from("var"),
+        TOK_VAL => String::from("val"),
+        TOK_RETURN => String::from("return"),
+        TOK_BREAK => String::from("break"),
+        TOK_CONTINUE => String::from("continue"),
+        TOK_TYPE_INT => String::from("int"),
+        TOK_TYPE_STR => String::from("str"),
+        TOK_TYPE_BOOL => String::from("bool"),
+        TOK_IDEN => String::from("<iden>"),
+        TOK_INT => String::from("<int>"), 
+        TOK_STR_LIT => String::from("<str_lit>"),
+        TOK_BOOL => String::from("<bool>"),
+        _ => char::from_u32(kind.try_into().unwrap()).unwrap().to_string(),
+    }
+}
+
 pub struct Lexer {
     pub content: Vec<String>,
     pub filename: String,
@@ -79,7 +101,9 @@ impl Lexer {
         let token: Token = self.front();
         if token.kind != kind {
             token.loc.error(
-                "expected kind {kind} found {token.kind}"
+                format!("expected kind {} found {}", 
+                    token_kind_to_str(kind), 
+                    token_kind_to_str(token.kind))
                 .to_string());
         }
     }

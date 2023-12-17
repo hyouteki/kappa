@@ -4,9 +4,11 @@ pub mod token;
 pub mod lexer;
 pub mod expr;
 pub mod stmt;
-use expr::{Expr};
-use lexer::{Lexer};
+pub mod parser;
 
+use lexer::Lexer;
+use parser::parse_lexer;
+use stmt::Stmt;
 
 fn print_usage() {
     println!("usage: kappa <subcommand> [<args>]");
@@ -28,8 +30,7 @@ fn main() {
     if args.len() < 3 { print_usage(); }
     let filepath: &str  = &args[2];
     let content: Vec<String> = get_content(&filepath);
-    let lexer: Lexer = Lexer::new(content, filepath.to_string());
+    let mut lexer: Lexer = Lexer::new(content, filepath.to_string());
     lexer.print();
-    let expr: Expr = Expr::Str("hello moto".to_string());
-    println!("{}", expr);
+    let stmts: Vec<Stmt> = parse_lexer(&mut lexer);
 }

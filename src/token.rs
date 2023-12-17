@@ -21,7 +21,8 @@ impl Loc {
     }
     pub fn error(&self, message: String) {
         println!("{}:{}: error: {}", 
-            self.row, self.col, message);        
+            self.row, self.col, message);
+        std::process::exit(1);        
     }
 }
 
