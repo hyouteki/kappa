@@ -33,4 +33,8 @@ fn main() {
     let mut lexer: Lexer = Lexer::new(content, filepath.to_string());
     lexer.print();
     let stmts: Vec<Stmt> = parse_lexer(&mut lexer);
+    println!("");
+    for stmt in stmts.iter() {
+        println!("{}", stmt);
+    }
 }

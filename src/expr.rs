@@ -116,7 +116,7 @@ pub fn parse_iden(lexer: &mut Lexer) -> Option<Expr> {
                 String::from("expected correct expr"), None),
         };
         if !lexer.empty() && 
-            !lexer.is_token_kind(')' as i32) {break;}
+            lexer.is_token_kind(')' as i32) {break;}
         lexer.assert_token_kind(',' as i32);
         lexer.eat(); // eat ','
     }

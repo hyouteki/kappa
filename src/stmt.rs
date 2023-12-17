@@ -1,5 +1,5 @@
-use std::collections::HashMap;
-use crate::{expr::{Expr}, lexer::{self, Lexer}};
+use std::{fmt, collections::HashMap};
+use crate::{expr::{Expr, parse_expr}, lexer::{self, Lexer}};
 
 pub struct Block {
     stmts: Vec<Stmt>,
@@ -20,7 +20,7 @@ pub struct Arg {
 pub struct FunDefStmt {
     name: String,
     args: Vec<Arg>,
-    return_expr: Type,
+    return_type: Type,
     block: Block,
 }
 
@@ -47,6 +47,7 @@ pub enum Stmt {
     If(IfStmt),
     While(WhileStmt),
     CF(CFStmt),
+    ExprStmt(Expr),
 }
 
 impl Block {
@@ -55,11 +56,59 @@ impl Block {
     }
 }
 
+impl fmt::Display for FunDefStmt {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let _ = write!(f, "FunDefStmt Name({}) Args(", self.name);
+        for arg in self.args.iter() {
+            let _ = write!(f, "{}, ", arg);
+        }
+        write!(f, "): ReturnType({}) {}", 
+            self.return_type, self.block)
+    }
+}
+
+impl fmt::Display for Type {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match &self {
+            Type::Str => write!(f, "Str"),
+            Type::Int => write!(f, "Int"),
+            Type::Bool => write!(f, "Bool"),
+        }
+    }
+}
+
+impl fmt::Display for Arg {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}({})", self.arg_type, self.name)        
+    }
+}
+
+impl fmt::Display for Block {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let _ = write!(f, "{{\n");
+        for stmt in self.stmts.iter() {
+            let _ = write!(f, "\t{}\n", stmt);
+        }
+        write!(f, "}}")
+    }
+}
+
 impl FunDefStmt {
     fn new(name: String, args: Vec<Arg>, 
-        return_expr: Type, block: Block) -> Self {
+        return_type: Type, block: Block) -> Self {
         FunDefStmt{name: name, args: args, 
-            return_expr: return_expr, block: block}
+            return_type: return_type, block: block}
+    }
+}
+
+impl fmt::Display for Stmt {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match &self {
+            Stmt::FunDef(x) => write!(f, "{}", x),
+            Stmt::BlockStmt(x) => write!(f, "{}", x),
+            Stmt::ExprStmt(x) => write!(f, "{}", x),
+            _ => todo!("Not yet implemented"),
+        }        
     }
 }
 
@@ -89,16 +138,29 @@ fn parse_block(lexer: &mut Lexer) -> Block {
             None => {},
         }
         if !lexer.empty() && 
-            !lexer.is_token_kind('}' as i32) {break;}     
+            lexer.is_token_kind('}' as i32) {break;}     
     }    
     lexer.eat(); // eat '}'
     Block::new(stmts)
 }
 
 pub fn parse_stmt(lexer: &mut Lexer) -> Option<Stmt> {
+    let tok_colon: i32 = ';' as i32; 
     match lexer.front().kind {
         lexer::TOK_FN => parse_fun_def(lexer),
+        lexer::TOK_IF => todo!("To be implemented"),
+        lexer::TOK_ELSE => todo!("To be implemented"),
+        lexer::TOK_WHILE => todo!("To be implemented"),
+        lexer::TOK_RETURN => todo!("To be implemented"),
+        x if x == tok_colon => {
+            lexer.eat(); // eat ';'
+            None
+        }
         _ => {
+            match parse_expr(lexer) {
+                Some(x) => {return Some(Stmt::ExprStmt(x));},
+                None => {},
+            };
             lexer.error(String::from("invalid stmt"), None);
             None
         }
