@@ -1,3 +1,3 @@
 fn main(): int {
-	print("Hello noto\n");
+	(1 + 2 - 4 * 10);
 }
