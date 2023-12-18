@@ -23,11 +23,10 @@ pub enum Expr {
 }
 
 fn get_op_prec(op: i32) -> i32 {
-    match op {
-        x if x == '*' as i32 => 40,
-        x if x == '/' as i32 => 40,
-        x if x == '+' as i32 => 20,
-        x if x == '-' as i32 => 20,
+    let ch: char = char::from_u32(op.try_into().unwrap()).unwrap();
+    match ch {
+        '*' | '/' => 40,
+        '+' | '-' => 20,
         _ => -1,
     }
 }
@@ -119,35 +118,32 @@ pub fn parse_paren_expr(lexer: &mut Lexer) -> Option<Expr> {
 }
 
 // reference: https://llvm.org/docs/tutorial/MyFirstLanguageFrontend/LangImpl02.html
-pub fn parse_bin_rhs(lexer: &mut Lexer, prec: i32, lhs: Expr) -> Option<Expr> {
+pub fn parse_bin_rhs(lexer: &mut Lexer, cur_prec: i32, lhs: Expr) -> Option<Expr> {
     loop {
         if lexer.empty() {return Some(lhs);}
         let bin_op: i32 = lexer.front().kind;
-        let op_prec: i32 =  get_op_prec(bin_op);
-        if op_prec < prec {return Some(lhs);}
+        let tok_prec: i32 =  get_op_prec(bin_op);
+        if tok_prec < 0 {return Some(lhs);}
         lexer.eat(); // eat bin_op
         let mut rhs: Expr = match parse_primary_expr(lexer) {
-            Some(x) => Some(x),
-            None => {
-                lexer.error("expected a valid expr"
-                    .to_string(), None); None
-            }
-        }.unwrap();
+            Some(x) => x,
+            None => {lexer.error("invalid expr".to_string(), 
+                None); unreachable!()}
+        };
         if lexer.empty() {
             return Some(Expr::Bin(Box::new(BinExpr::new(lhs, bin_op, rhs))));
         }
         let next_op: i32 = lexer.front().kind;
         let next_prec: i32 = get_op_prec(next_op);
-        if op_prec < next_prec {
-            rhs = match parse_bin_rhs(lexer, op_prec+1, rhs) {
-                Some(x) => Some(x),
-                None => {
-                    lexer.error("expected a valid expr"
-                        .to_string(), None); None
-                }
-            }.unwrap();
+        if tok_prec < next_prec {
+            rhs = match parse_bin_rhs(lexer, tok_prec+1, rhs) {
+                Some(x) => x,
+                None => {lexer.error("invalid expr".to_string(), 
+                    None); unreachable!()}
+            };
         }
-        return Some(Expr::Bin(Box::new(BinExpr::new(lhs, bin_op, rhs))));    
+        let new_lhs = Expr::Bin(Box::new(BinExpr::new(lhs, bin_op, rhs)));
+        return parse_bin_rhs(lexer, tok_prec+1, new_lhs);    
     }
 }
 
