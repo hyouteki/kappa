@@ -1,5 +1,6 @@
 use std::{fmt, collections::HashMap};
-use crate::{expr::{Expr, parse_expr}, lexer::{self, Lexer}};
+use crate::expr::{Expr, parse_expr};
+use crate::lexer::{self, Lexer, token_kind_to_str};
 
 pub struct Block {
     stmts: Vec<Stmt>,
@@ -24,6 +25,13 @@ pub struct FunDefStmt {
     block: Block,
 }
 
+pub struct VarAssignStmt {
+    name: String,
+    var_type: Type,
+    expr: Expr,
+    mutable: bool,  
+}
+
 pub struct IfStmt {
     condition: Expr,
     then_block: Block,
@@ -44,6 +52,7 @@ pub enum CFStmt {
 pub enum Stmt {
     BlockStmt(Box<Block>),
     FunDef(FunDefStmt),
+    VarAssign(VarAssignStmt),
     If(IfStmt),
     While(WhileStmt),
     CF(CFStmt),
@@ -53,6 +62,23 @@ pub enum Stmt {
 impl Block {
     fn new(stmts: Vec<Stmt>) -> Self {
         Block{stmts: stmts, vars: HashMap::new()}
+    }
+}
+
+impl VarAssignStmt {
+    fn new(name: String, var_type: Type, expr: Expr, 
+        mutable: bool) -> Self {
+        VarAssignStmt{name: name, var_type: var_type, 
+            expr: expr, mutable: mutable}
+    }
+}
+
+impl fmt::Display for VarAssignStmt {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let _ = write!(f, "VarAssignStmt ");
+        if self.mutable {let _ = write!(f, "Mutable ");}
+        write!(f, "Name({}): Type({}) = {}", self.name, 
+            self.var_type, self.expr)
     }
 }
 
@@ -105,6 +131,7 @@ impl fmt::Display for Stmt {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match &self {
             Stmt::FunDef(x) => write!(f, "{}", x),
+            Stmt::VarAssign(x) => write!(f, "{}", x),
             Stmt::BlockStmt(x) => write!(f, "{}", x),
             Stmt::ExprStmt(x) => write!(f, "{}", x),
             _ => todo!("Not yet implemented"),
@@ -148,6 +175,7 @@ pub fn parse_stmt(lexer: &mut Lexer) -> Option<Stmt> {
     let tok_colon: i32 = ';' as i32; 
     match lexer.front().kind {
         lexer::TOK_FN => parse_fun_def(lexer),
+        lexer::TOK_VAR | lexer::TOK_VAL => parse_var_assign(lexer),
         lexer::TOK_IF => todo!("To be implemented"),
         lexer::TOK_ELSE => todo!("To be implemented"),
         lexer::TOK_WHILE => todo!("To be implemented"),
@@ -164,6 +192,33 @@ pub fn parse_stmt(lexer: &mut Lexer) -> Option<Stmt> {
             lexer.error(String::from("invalid stmt"), None);
             None
         }
+    }
+}
+
+fn parse_var_assign(lexer: &mut Lexer) -> Option<Stmt> {
+    let mutable: bool = match lexer.front().kind {
+        lexer::TOK_VAR => true,
+        lexer::TOK_VAL => false,
+        x => {lexer.error(format!(
+            "invalid token expected one of {}, {} found {}", 
+            token_kind_to_str(lexer::TOK_VAR), 
+            token_kind_to_str(lexer::TOK_VAL),
+            token_kind_to_str(x)), None); unreachable!()}
+    };
+    lexer.eat(); // eat 'var' or 'val'
+    lexer.assert_token_kind(lexer::TOK_IDEN);
+    let name: String = lexer.front().get_str_val()
+        .unwrap().to_string();
+    lexer.eat(); // eat name
+    lexer.assert_token_kind(':' as i32);
+    lexer.eat();
+    let var_type: Type = parse_type(lexer);
+    lexer.assert_token_kind('=' as i32);
+    lexer.eat(); // eat '='
+    match parse_expr(lexer) {
+        Some(x) => Some(Stmt::VarAssign(
+            VarAssignStmt::new(name, var_type, x, mutable))),
+        None => {lexer.error("invalid expr".to_string(), None); None},
     }
 }
 
