@@ -1,3 +1,11 @@
+fn foo(n: int): int {
+	if (true) {
+		return 1;
+	} 
+	return n+(n-1);
+}
+
 fn main(): int {
-	var num: int = (1 + (5 - 4) * 10) / (1 + 2);
+	print(foo(4), "\n");
+	return 0;
 }

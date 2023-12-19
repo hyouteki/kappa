@@ -1,4 +1,4 @@
-use crate::{lexer::Lexer, stmt::{Stmt, parse_stmt}};
+use crate::fe::{lexer::Lexer, stmt::{Stmt, parse_stmt}};
 
 pub fn parse_lexer(lexer: &mut Lexer) -> Vec<Stmt> {
     let mut stmts: Vec<Stmt> = Vec::new();

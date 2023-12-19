@@ -1,4 +1,4 @@
-use crate::token::{Loc, Token, error};
+use crate::fe::token::{Loc, Token, error};
 
 pub const TOK_FN: i32 = -1;
 pub const TOK_IF: i32 = -2;
