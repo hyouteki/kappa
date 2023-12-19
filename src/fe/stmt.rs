@@ -1,6 +1,6 @@
 use std::{fmt, collections::HashMap};
-use crate::expr::{Expr, parse_expr};
-use crate::lexer::{self, Lexer, token_kind_to_str};
+use crate::fe::expr::{Expr, parse_expr};
+use crate::fe::lexer::{self, Lexer, token_kind_to_str};
 
 pub struct Block {
     pub stmts: Vec<Stmt>,
@@ -63,6 +63,12 @@ impl Block {
     fn new(stmts: Vec<Stmt>) -> Self {
         Block{stmts: stmts, vars: HashMap::new()}
     }
+    fn new_empty() -> Self {
+        Block{stmts: Vec::new(), vars: HashMap::new()}
+    }
+    fn is_empty(&self) -> bool {
+        self.stmts.is_empty()
+    } 
 }
 
 impl VarAssignStmt {
@@ -70,6 +76,20 @@ impl VarAssignStmt {
         mutable: bool) -> Self {
         VarAssignStmt{name: name, var_type: var_type, 
             expr: expr, mutable: mutable}
+    }
+}
+
+impl FunDefStmt {
+    fn new(name: String, args: Vec<Arg>, 
+        return_type: Type, block: Block) -> Self {
+        FunDefStmt{name: name, args: args, 
+            return_type: return_type, block: block}
+    }
+}
+
+impl IfStmt {
+    fn new(condition: Expr, then_block: Block, else_block: Block) -> Self {
+        IfStmt{condition: condition, then_block: then_block, else_block: else_block}
     }
 }
 
@@ -129,11 +149,14 @@ impl fmt::Display for CFStmt {
     }
 }
 
-impl FunDefStmt {
-    fn new(name: String, args: Vec<Arg>, 
-        return_type: Type, block: Block) -> Self {
-        FunDefStmt{name: name, args: args, 
-            return_type: return_type, block: block}
+impl fmt::Display for IfStmt {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        let _ = write!(f, "IfStmt Condition({}) {}", 
+            self.condition, self.then_block);
+        match self.else_block.is_empty() {
+            false => write!(f, " else {}", self.else_block),
+            true => write!(f, ""),
+        }
     }
 }
 
@@ -144,6 +167,7 @@ impl fmt::Display for Stmt {
             Stmt::VarAssign(x) => write!(f, "{}", x),
             Stmt::BlockStmt(x) => write!(f, "{}", x),
             Stmt::ExprStmt(x) => write!(f, "{}", x),
+            Stmt::If(x) => write!(f, "{}", x),
             Stmt::CF(x) => write!(f, "{}", x),
             _ => todo!("Not yet implemented"),
         }        
@@ -187,7 +211,7 @@ pub fn parse_stmt(lexer: &mut Lexer) -> Option<Stmt> {
     match lexer.front().kind {
         lexer::TOK_FN => parse_fun_def(lexer),
         lexer::TOK_VAR | lexer::TOK_VAL => parse_var_assign(lexer),
-        lexer::TOK_IF => todo!("To be implemented"),
+        lexer::TOK_IF => parse_if(lexer),
         lexer::TOK_ELSE => todo!("To be implemented"),
         lexer::TOK_WHILE => todo!("To be implemented"),
         lexer::TOK_RETURN => parse_return(lexer),
@@ -215,6 +239,23 @@ fn parse_return(lexer: &mut Lexer) -> Option<Stmt> {
             None); unreachable!()},
     };
     Some(Stmt::CF(CFStmt::Return(expr)))
+}
+
+fn parse_if(lexer: &mut Lexer) -> Option<Stmt> {
+    lexer.assert_token_kind(lexer::TOK_IF);
+    lexer.eat(); // eat if
+    let condition: Expr = match parse_expr(lexer) {
+        Some(x) => x,
+        None => {lexer.error(String::from("invalid expr"), 
+            None); unreachable!()}
+    };
+    let then_block: Block = parse_block(lexer);
+    if lexer.empty() || !lexer.is_token_kind(lexer::TOK_ELSE) {
+        return Some(Stmt::If(IfStmt::new(condition, then_block, Block::new_empty())));
+    }
+    lexer.eat(); // eat else
+    let else_block: Block = parse_block(lexer);
+    Some(Stmt::If(IfStmt::new(condition, then_block, else_block))) 
 }
 
 fn parse_var_assign(lexer: &mut Lexer) -> Option<Stmt> {

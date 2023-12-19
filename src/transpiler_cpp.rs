@@ -1,6 +1,6 @@
 use std::{fs::File, io::Write};
-use crate::stmt::{Stmt, CFStmt, FunDefStmt, VarAssignStmt, Type, Block};
-use crate::expr::{Expr, CallExpr, BinExpr};
+use crate::fe::stmt::{Stmt, CFStmt, FunDefStmt, VarAssignStmt, Type, Block};
+use crate::fe::expr::{Expr, CallExpr, BinExpr};
 
 fn type_to_string(x: &Type) -> String {
     match x {

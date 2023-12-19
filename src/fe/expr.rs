@@ -1,5 +1,5 @@
 use std::fmt;
-use crate::lexer::{self, Lexer};
+use crate::fe::lexer::{self, Lexer};
 
 pub struct BinExpr {
     pub lhs: Expr,
@@ -99,11 +99,11 @@ pub fn parse_str_expr(lexer: &mut Lexer) -> Option<Expr> {
 
 pub fn parse_bool_expr(lexer: &mut Lexer) -> Option<Expr> {
     lexer.assert_token();
-    let expr: Option<Expr> = match lexer.front()
-        .get_bool_val() {
-            Some(x) => Some(Expr::Bool(*x)),
-            None => None,
-        };
+    let expr: Option<Expr> = match lexer.front().get_str_val().unwrap().as_str() {
+        "true" => Some(Expr::Bool(true)),
+        "false" => Some(Expr::Bool(false)),
+        _ => None,
+    };
     lexer.eat();
     expr
 }

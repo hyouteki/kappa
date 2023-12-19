@@ -1,4 +1,7 @@
 fn foo(n: int): int {
+	if (true) {
+		return 1;
+	} 
 	return n+(n-1);
 }
 
