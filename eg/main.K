@@ -1,3 +1,8 @@
-fn main(a: int, b: bool, c: str): int {
-	var num: int = (11 + 5 * (1-2) / 5) / ( 2);
+fn foo(n: int): int {
+	return n+(n-1);
+}
+
+fn main(): int {
+	print(foo(4), "\n");
+	return 0;
 }

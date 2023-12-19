@@ -1,6 +1,11 @@
 #include <string>
-int main(int a, bool b, std::string c)
+#include <iostream>
+int foo(int n)
 {
-const int num = ((11+((5*(1-2))/5))/2);
-printf("%d\n", num);
+return (n+(n-1));
+}
+int main()
+{
+std::cout << foo(4) << "\n";
+return 0;
 }

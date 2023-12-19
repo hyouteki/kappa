@@ -119,6 +119,16 @@ impl fmt::Display for Block {
     }
 }
 
+impl fmt::Display for CFStmt {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        match self {
+            CFStmt::Return(x) => write!(f, "Return({})", x),
+            CFStmt::Break => write!(f, "Break()"),
+            CFStmt::Continue => write!(f, "Continue()"), 
+        }
+    }
+}
+
 impl FunDefStmt {
     fn new(name: String, args: Vec<Arg>, 
         return_type: Type, block: Block) -> Self {
@@ -134,6 +144,7 @@ impl fmt::Display for Stmt {
             Stmt::VarAssign(x) => write!(f, "{}", x),
             Stmt::BlockStmt(x) => write!(f, "{}", x),
             Stmt::ExprStmt(x) => write!(f, "{}", x),
+            Stmt::CF(x) => write!(f, "{}", x),
             _ => todo!("Not yet implemented"),
         }        
     }
@@ -179,7 +190,7 @@ pub fn parse_stmt(lexer: &mut Lexer) -> Option<Stmt> {
         lexer::TOK_IF => todo!("To be implemented"),
         lexer::TOK_ELSE => todo!("To be implemented"),
         lexer::TOK_WHILE => todo!("To be implemented"),
-        lexer::TOK_RETURN => todo!("To be implemented"),
+        lexer::TOK_RETURN => parse_return(lexer),
         x if x == tok_colon => {
             lexer.eat(); // eat ';'
             None
@@ -193,6 +204,17 @@ pub fn parse_stmt(lexer: &mut Lexer) -> Option<Stmt> {
             None
         }
     }
+}
+
+fn parse_return(lexer: &mut Lexer) -> Option<Stmt> {
+    lexer.assert_token_kind(lexer::TOK_RETURN);
+    lexer.eat(); // eat return
+    let expr: Expr = match parse_expr(lexer) {
+        Some(x) => x,
+        None => {lexer.error(String::from("invalid expr"), 
+            None); unreachable!()},
+    };
+    Some(Stmt::CF(CFStmt::Return(expr)))
 }
 
 fn parse_var_assign(lexer: &mut Lexer) -> Option<Stmt> {
