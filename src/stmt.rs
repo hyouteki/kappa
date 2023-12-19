@@ -3,7 +3,7 @@ use crate::expr::{Expr, parse_expr};
 use crate::lexer::{self, Lexer, token_kind_to_str};
 
 pub struct Block {
-    stmts: Vec<Stmt>,
+    pub stmts: Vec<Stmt>,
     vars: HashMap<String, Expr>,
 }
 
@@ -14,22 +14,22 @@ pub enum Type {
 }
 
 pub struct Arg {
-    name: String,
-    arg_type: Type, 
+    pub name: String,
+    pub arg_type: Type, 
 }
 
 pub struct FunDefStmt {
-    name: String,
-    args: Vec<Arg>,
-    return_type: Type,
-    block: Block,
+    pub name: String,
+    pub args: Vec<Arg>,
+    pub return_type: Type,
+    pub block: Block,
 }
 
 pub struct VarAssignStmt {
-    name: String,
-    var_type: Type,
-    expr: Expr,
-    mutable: bool,  
+    pub name: String,
+    pub var_type: Type,
+    pub expr: Expr,
+    pub mutable: bool,  
 }
 
 pub struct IfStmt {

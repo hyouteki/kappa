@@ -1,15 +1,15 @@
-use std::{fmt, collections::HashMap};
+use std::fmt;
 use crate::lexer::{self, Lexer};
 
 pub struct BinExpr {
-    lhs: Expr,
-    op: i32,
-    rhs: Expr,
+    pub lhs: Expr,
+    pub op: i32,
+    pub rhs: Expr,
 }
 
 pub struct CallExpr {
-    name: String,
-    args: Vec<Expr>,
+    pub name: String,
+    pub args: Vec<Expr>,
 }
 
 pub enum Expr {

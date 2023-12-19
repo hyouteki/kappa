@@ -5,10 +5,12 @@ pub mod lexer;
 pub mod expr;
 pub mod stmt;
 pub mod parser;
+pub mod transpiler_cpp;
 
 use lexer::Lexer;
 use parser::parse_lexer;
 use stmt::Stmt;
+use transpiler_cpp::transpiler;
 
 fn print_usage() {
     println!("usage: kappa <subcommand> [<args>]");
@@ -37,4 +39,6 @@ fn main() {
     for stmt in stmts.iter() {
         println!("{}", stmt);
     }
+    println!("");
+    transpiler(String::from("eg/main.cpp"), stmts);
 }
