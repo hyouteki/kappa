@@ -33,14 +33,14 @@ pub struct VarAssignStmt {
 }
 
 pub struct IfStmt {
-    condition: Expr,
-    then_block: Block,
-    else_block: Block,
+    pub condition: Expr,
+    pub then_block: Block,
+    pub else_block: Block,
 }
 
 pub struct WhileStmt {
-    condition: Expr,
-    block: Block,
+    pub condition: Expr,
+    pub block: Block,
 }
 
 pub enum CFStmt {
@@ -66,7 +66,7 @@ impl Block {
     fn new_empty() -> Self {
         Block{stmts: Vec::new(), vars: HashMap::new()}
     }
-    fn is_empty(&self) -> bool {
+    pub fn is_empty(&self) -> bool {
         self.stmts.is_empty()
     } 
 }
@@ -90,6 +90,12 @@ impl FunDefStmt {
 impl IfStmt {
     fn new(condition: Expr, then_block: Block, else_block: Block) -> Self {
         IfStmt{condition: condition, then_block: then_block, else_block: else_block}
+    }
+}
+
+impl WhileStmt {
+    fn new(condition: Expr, block: Block) -> Self {
+        WhileStmt{condition: condition, block: block}
     }
 }
 
@@ -157,6 +163,13 @@ impl fmt::Display for IfStmt {
             false => write!(f, " else {}", self.else_block),
             true => write!(f, ""),
         }
+    }
+}
+
+impl fmt::Display for WhileStmt {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "WhileStmt Condition({}) {}", 
+            self.condition, self.block)
     }
 }
 
@@ -256,6 +269,18 @@ fn parse_if(lexer: &mut Lexer) -> Option<Stmt> {
     lexer.eat(); // eat else
     let else_block: Block = parse_block(lexer);
     Some(Stmt::If(IfStmt::new(condition, then_block, else_block))) 
+}
+
+fn parse_while(lexer: &mut Lexer) -> Option<Stmt> {
+    lexer.assert_token_kind(lexer::TOK_WHILE);
+    lexer.eat(); // eat while
+    let condition: Expr = match parse_expr(lexer) {
+        Some(x) => x,
+        None => {lexer.error(String::from("invalid expr"), 
+            None); unreachable!()}
+    };
+    let block: Block = parse_block(lexer);
+    Some(Stmt::While(WhileStmt::new(condition, block)))
 }
 
 fn parse_var_assign(lexer: &mut Lexer) -> Option<Stmt> {

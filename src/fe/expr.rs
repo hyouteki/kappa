@@ -25,8 +25,9 @@ pub enum Expr {
 fn get_op_prec(op: i32) -> i32 {
     let ch: char = char::from_u32(op.try_into().unwrap()).unwrap();
     match ch {
-        '*' | '/' => 40,
-        '+' | '-' => 20,
+        '*' | '/' => 60,
+        '+' | '-' => 40,
+        '<' | '>' => 20,
         _ => -1,
     }
 }

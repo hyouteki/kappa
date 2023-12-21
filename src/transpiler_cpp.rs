@@ -1,5 +1,6 @@
 use std::{fs::File, io::Write};
-use crate::fe::stmt::{Stmt, CFStmt, FunDefStmt, VarAssignStmt, Type, Block};
+use crate::fe::stmt::{Stmt, CFStmt, FunDefStmt, IfStmt, 
+    WhileStmt, VarAssignStmt, Type, Block};
 use crate::fe::expr::{Expr, CallExpr, BinExpr};
 
 fn type_to_string(x: &Type) -> String {
@@ -100,6 +101,20 @@ fn transpile_cf_stmt(cf: &CFStmt, lines: &mut Vec<String>) {
     };
 }
 
+fn transpile_if_stmt(if_stmt: &IfStmt, lines: &mut Vec<String>) {
+    lines.push(format!("if ({})", expr_to_string(&if_stmt.condition)));
+    transpile_block(&if_stmt.then_block, lines);
+    if !if_stmt.else_block.is_empty() {
+        lines.push(String::from("else"));
+        transpile_block(&if_stmt.else_block, lines);
+    } 
+}
+
+fn transpile_while_stmt(while_stmt: &WhileStmt, lines: &mut Vec<String>) {
+    lines.push(format!("while ({})", expr_to_string(&while_stmt.condition)));
+    transpile_block(&while_stmt.block, lines);    
+}
+
 fn transpile_to_native_api(call: &CallExpr, lines: &mut Vec<String>) {
     let mut x: String = String::from("");
     match call.name.as_str() {
@@ -128,12 +143,16 @@ fn transpile(stmt: &Stmt, lines: &mut Vec<String>) {
         Stmt::FunDef(x) => transpile_fun_def_stmt(x, lines),
         Stmt::VarAssign(x) => transpile_var_assign_stmt(x, lines),
         Stmt::ExprStmt(x) => transpile_expr_stmt(x, lines),
+        Stmt::If(x) => transpile_if_stmt(x, lines),
+        Stmt::While(x) => transpile_while_stmt(x, lines),
         Stmt::CF(x) => transpile_cf_stmt(x, lines),
         _ => {}
     };
 }
 
 fn include_headers(lines: &mut Vec<String>) {
+    lines.push(String::from("#include <cstdio>"));
+    lines.push(String::from("#include <cstdlib>"));
     lines.push(String::from("#include <string>"));
     lines.push(String::from("#include <iostream>"));
 }

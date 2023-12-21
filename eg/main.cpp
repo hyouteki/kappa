@@ -1,11 +1,17 @@
+#include <cstdio>
+#include <cstdlib>
 #include <string>
 #include <iostream>
-int foo(int n)
+int fib(int n)
 {
-return (n+(n-1));
+if ((n<2))
+{
+return n;
+}
+return (fib((n-1))+fib((n-2)));
 }
 int main()
 {
-std::cout << foo(4) << "\n";
+std::cout << fib(100) << "\n";
 return 0;
 }

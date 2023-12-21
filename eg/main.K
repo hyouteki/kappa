@@ -1,11 +1,11 @@
-fn foo(n: int): int {
-	if (true) {
-		return 1;
+fn fib(n: int): int {
+	if (n < 2) {
+		return n;
 	} 
-	return n+(n-1);
+	return fib(n-1) + fib(n-2);
 }
 
 fn main(): int {
-	print(foo(4), "\n");
+	print(fib(100), "\n");
 	return 0;
 }

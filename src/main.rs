@@ -40,13 +40,6 @@ fn cli() -> Command {
     )
 }
 
-fn print_usage() {
-    println!("usage: kappa <subcommand> [<args>]");
-    println!("subcommands: compile");
-    println!("-\tcompile\t<filepath>");
-    std::process::exit(1);
-}
-
 fn get_content(filepath: &str) -> Vec<String> {
     BufReader::new(std::fs::File::open(filepath)
         .expect("could not open file")).lines()
