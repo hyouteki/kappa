@@ -5,12 +5,9 @@ pub mod fe;
 pub mod transpiler_cpp;
 pub mod compiler_felf64;
 
-// TODO: make new module just for compiler
-pub mod native_fun;
-
 use fe::{lexer::Lexer, parser::parse_lexer, stmt::Stmt};
 use transpiler_cpp::transpiler;
-use compiler_felf64::{compiler};
+use compiler_felf64::compiler::compiler;
 
 fn cli() -> Command {
     Command::new("kappa")

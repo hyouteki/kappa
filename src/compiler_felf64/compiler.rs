@@ -1,7 +1,7 @@
 use std::{fs::File, io::Write};
 use crate::fe::stmt::{Stmt, CFStmt, FunDefStmt, VarAssignStmt, Type, Block};
 use crate::fe::expr::{Expr, CallExpr, BinExpr};
-use crate::native_fun::{is_native_fun, compile_fun};
+use crate::compiler_felf64::native_api::{is_native_api, compile_api};
 
 pub struct Asm {
     pub glob: Vec<String>,
@@ -14,7 +14,7 @@ impl Asm {fn new() -> Self {Asm{glob: vec![], text: vec![], data: vec![]}}}
 pub fn name_to_label(name: &String) -> String {format!("kappa_data_{}:", name)}
 
 fn compile_call_expr(call: &CallExpr, asm: &mut Asm) {
-    if is_native_fun(&call.name) {compile_fun(&call, asm);}
+    if is_native_api(&call.name) {compile_api(&call, asm);}
 }
 
 fn compile_expr(expr: &Expr, asm: &mut Asm) {
