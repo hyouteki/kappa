@@ -157,7 +157,7 @@ fn include_headers(lines: &mut Vec<String>) {
     lines.push(String::from("#include <iostream>"));
 }
 
-pub fn transpiler(filename: String, stmts: Vec<Stmt>) {   
+pub fn transpiler(filename: String, stmts: &Vec<Stmt>) {   
     let mut lines: Vec<String> = Vec::new();
     include_headers(&mut lines);
     for stmt in stmts.iter() {

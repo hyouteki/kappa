@@ -3,9 +3,14 @@ use clap::{Arg, Command, ArgAction, ArgGroup};
 
 pub mod fe;
 pub mod transpiler_cpp;
+pub mod compiler_felf64;
+
+// TODO: make new module just for compiler
+pub mod native_fun;
 
 use fe::{lexer::Lexer, parser::parse_lexer, stmt::Stmt};
 use transpiler_cpp::transpiler;
+use compiler_felf64::{compiler};
 
 fn cli() -> Command {
     Command::new("kappa")
@@ -64,5 +69,7 @@ fn main() {
         println!("{}", stmt);
     }
     println!("");
-    if cpp {transpiler(String::from("eg/main.cpp"), stmts);}
+    // TODO: Add names
+    if cpp {transpiler(String::from("eg/main.cpp"), &stmts);}
+    if felf {compiler(String::from("eg/asm.asm"), &stmts);}
 }

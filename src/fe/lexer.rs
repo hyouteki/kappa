@@ -133,7 +133,7 @@ impl Lexer {
                 let mut ch: char = self.content[i].chars()
                     .nth(j).unwrap();
 
-                if ch.is_alphanumeric() || ch == '_' {
+                if ch.is_alphabetic() || ch == '_' {
                     let mut iden: String = String::from("");
                     while ch.is_alphanumeric() || ch == '_' {
                         iden.push(ch);
