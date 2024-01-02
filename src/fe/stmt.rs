@@ -60,6 +60,12 @@ pub enum Stmt {
     ExprStmt(Expr),
 }
 
+impl Arg {
+    pub fn new(name: String, arg_type: Type) -> Self {
+        Arg{name: name, arg_type: arg_type}
+    } 
+}
+
 impl Block {
     fn new(stmts: Vec<Stmt>) -> Self {
         Block{stmts: stmts, vars: HashMap::new()}

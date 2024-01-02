@@ -8,6 +8,7 @@ pub mod mw;
 pub mod utils;
 
 use fe::{lexer::Lexer, parser::parse_lexer, stmt::Stmt};
+use mw::validator::validator;
 use transpiler_cpp::transpiler;
 use compiler_felf64::compiler::compiler;
 
@@ -68,6 +69,7 @@ fn main() {
         println!("{}", stmt);
     }
     println!("");
+    validator(&stmts);
     // TODO: Add names
     if cpp {transpiler(String::from("eg/main.cpp"), &stmts);}
     if felf {compiler(String::from("eg/asm.asm"), &stmts);}

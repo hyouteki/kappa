@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use crate::fe::expr::{Expr, CallExpr};
 use crate::fe::stmt::{VarAssignStmt, Stmt, Arg, Type};
+use crate::mw::native_api::get_native_apis;
 use crate::utils::{error, assert};
 
 struct Var {
@@ -8,7 +9,7 @@ struct Var {
     mutable: bool,
 }
 
-struct Fun {
+pub struct Fun {
     args: Vec<Arg>,
     return_type: Type,
 }
@@ -24,8 +25,16 @@ impl Var {
     }
 }
 
-impl Context {pub fn new() -> Self {
-    Context{vars: HashMap::new(), funs: HashMap::new()}}
+impl Fun {
+    pub fn new(args: Vec<Arg>, return_type: Type) -> Self {
+        Fun{args: args, return_type: return_type}
+    }
+} 
+
+impl Context {
+    pub fn new() -> Self {
+        Context{vars: HashMap::new(), funs: get_native_apis()}
+    }
 }
 
 fn get_expr_type(expr: &Expr, ctx: &Context) -> Type {
@@ -78,16 +87,25 @@ fn validate_fun_call(call: &CallExpr, ctx: &Context) {
 	        }
 	    },
 	    None => error(format!("function {} does not exist", call.name)),
+    };
+}
+
+fn validate_expr(expr: &Expr, ctx: &Context) {
+    match expr {
+        Expr::Call(x) => validate_fun_call(x, ctx),
+        _ => {}
     }
 }
 
 fn validate_stmt(stmt: &Stmt, ctx: &mut Context) {
     match stmt {
 	    Stmt::VarAssign(x) => validate_var_assign_stmt(x, ctx),
-	    _ => {},
+        Stmt::ExprStmt(x) => validate_expr(x, ctx),
+        _ => {},
     }
 }
 
-pub fn validator(stmts: &Vec<Stmt>, ctx: &mut Context) {
-    for stmt in stmts.iter() {validate_stmt(stmt, ctx);}
+pub fn validator(stmts: &Vec<Stmt>) {
+    let mut ctx: Context = Context::new();
+    for stmt in stmts.iter() {validate_stmt(stmt, &mut ctx);}
 }
