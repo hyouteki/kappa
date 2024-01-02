@@ -70,7 +70,7 @@ fn main() {
     }
     println!("");
     validator(&stmts);
-    // TODO: Add names
-    if cpp {transpiler(String::from("eg/main.cpp"), &stmts);}
-    if felf {compiler(String::from("eg/asm.asm"), &stmts);}
+    let filename = filepath[..filepath.len()-1].to_string();
+    if cpp {transpiler(filename.clone()+&"cpp", &stmts);}
+    if felf {compiler(filename.clone()+&"asm", &stmts);}
 }

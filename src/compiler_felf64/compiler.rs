@@ -7,9 +7,19 @@ pub struct Asm {
     pub glob: Vec<String>,
     pub text: Vec<String>,
     pub data: Vec<String>,
+    counter: u32,
 }
 
-impl Asm {fn new() -> Self {Asm{glob: vec![], text: vec![], data: vec![]}}}
+impl Asm {
+    fn new() -> Self {Asm{glob: vec![], text: vec![], data: vec![], counter: 0}}
+    pub fn inc(&mut self) {self.counter += 1;}
+    pub fn get(&self) -> u32 {self.counter}
+    pub fn get_and_inc(&mut self) -> u32 {
+        let ret = self.counter;
+        self.counter += 1;
+        ret
+    }
+}
 
 pub fn name_to_label(name: &String) -> String {format!("kappa_data_{}:", name)}
 
@@ -19,15 +29,15 @@ fn compile_call_expr(call: &CallExpr, asm: &mut Asm) {
 
 fn compile_expr(expr: &Expr, asm: &mut Asm) {
     match expr {
-	Expr::Call(x) => compile_call_expr(x, asm),
-	_ => todo!("Not yet implemented"),
+	    Expr::Call(x) => compile_call_expr(x, asm),
+	    _ => todo!("Not yet implemented"),
     };
 }
 
 fn compile(stmt: &Stmt, asm: &mut Asm) {
     match stmt {
-	Stmt::ExprStmt(x) => compile_expr(x, asm),
-	_ => todo!("Not yet implemented"),
+	    Stmt::ExprStmt(x) => compile_expr(x, asm),
+	    _ => todo!("Not yet implemented"),
     };
 }
 
@@ -36,21 +46,22 @@ pub fn compiler(filename: String, stmts: &Vec<Stmt>) {
     asm.glob.push(String::from("global _start"));
     asm.text.push(String::from("section .text"));
     asm.text.push(String::from("_start:"));
+    asm.data.push(String::from("section .data"));
     for stmt in stmts.iter() {compile(stmt, &mut asm);}
     {
-	let mut file = File::create(filename)
-	    .expect("could not create a file");
-	for line in asm.glob.iter() {
+	    let mut file = File::create(filename)
+	        .expect("could not create a file");
+	    for line in asm.glob.iter() {
             file.write_all(line.as_bytes()).expect("could not write line");
             file.write_all(b"\n").expect("could not write new line");
-	}
-	for line in asm.text.iter() {
+	    }
+	    for line in asm.text.iter() {
             file.write_all(line.as_bytes()).expect("could not write line");
             file.write_all(b"\n").expect("could not write new line");
-	}
-	for line in asm.data.iter() {
+	    }
+	    for line in asm.data.iter() {
             file.write_all(line.as_bytes()).expect("could not write line");
             file.write_all(b"\n").expect("could not write new line");
-	}
+	    }
     }
 }
