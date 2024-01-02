@@ -20,7 +20,7 @@ pub struct Context {
 
 impl Var {
     fn new(expr_type: Type, mutable: bool) -> Self {
-	Var{expr_type: expr_type, mutable: mutable}
+        Var{expr_type: expr_type, mutable: mutable}
     }
 }
 
