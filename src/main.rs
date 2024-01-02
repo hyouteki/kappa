@@ -4,6 +4,8 @@ use clap::{Arg, Command, ArgAction, ArgGroup};
 pub mod fe;
 pub mod transpiler_cpp;
 pub mod compiler_felf64;
+pub mod mw;
+pub mod utils;
 
 use fe::{lexer::Lexer, parser::parse_lexer, stmt::Stmt};
 use transpiler_cpp::transpiler;

@@ -7,6 +7,7 @@ pub struct Block {
     vars: HashMap<String, Expr>,
 }
 
+#[derive(Copy, Clone, PartialEq)]
 pub enum Type {
     Str,
     Int,
