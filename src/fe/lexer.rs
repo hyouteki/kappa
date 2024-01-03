@@ -16,6 +16,14 @@ pub const TOK_IDEN: i32 = -13;
 pub const TOK_INT: i32 = -14; 
 pub const TOK_STR_LIT: i32 = -15;
 pub const TOK_BOOL: i32 = -16;
+pub const TOK_COMP_HIGH: i32 = -17;
+pub const TOK_GT: i32 = -17;
+pub const TOK_LT: i32 = -18;
+pub const TOK_GE: i32 = -19;
+pub const TOK_LE: i32 = -20;
+pub const TOK_EQ: i32 = -21;
+pub const TOK_NE: i32 = -22;
+pub const TOK_COMP_LOW: i32 = -22;
 
 pub fn string_to_token_kind(s: &String) -> i32 {
     match s.as_str() {
@@ -59,6 +67,12 @@ pub fn token_kind_to_str(kind: i32) -> String {
         TOK_INT => String::from("<int>"), 
         TOK_STR_LIT => String::from("<str_lit>"),
         TOK_BOOL => String::from("<bool>"),
+        TOK_GT => String::from(">="),
+        TOK_LT => String::from("<="),
+        TOK_GE => String::from(">"),
+        TOK_LE => String::from("<"),
+        TOK_EQ => String::from("=="),
+        TOK_NE => String::from("!="),
         _ => char::from_u32(kind.try_into().unwrap()).unwrap().to_string(),
     }
 }
@@ -185,6 +199,45 @@ impl Lexer {
                     continue;
                 }
 
+                {
+                    let syms = vec!['=', '<', '>', '!'];
+                    if syms.contains(&ch) {
+                        let mut sym = String::from("");
+                        while syms.contains(&ch) {
+                            sym.push(ch);
+                            j += 1;
+                            ch = self.content[i].chars().nth(j).unwrap();
+                        }
+                        if sym.len() == 1 {
+                            self.tokens.push(Token::new_str(
+                                sym.chars().nth(0).unwrap() as i32, sym,
+                                Loc::from_usize(i+1, col+1)));
+                            col += 1;
+                            self.content[i] = self.content[i][1..].to_string();
+                            continue;
+                        }
+                        let tok: i32 = match sym.as_str() {
+                            ">"  => TOK_GT,
+                            "<"  => TOK_LT,
+                            ">=" => TOK_GE,
+                            "<=" => TOK_LE,
+                            "==" => TOK_EQ,
+                            "!=" => TOK_NE,
+                            _ => {
+                                self.error(format!("invalid operator {}", sym), 
+                                           Some(Loc::from_usize(i+1, col+1 as usize)));
+                                unreachable!()
+                            },
+                        };
+              
+                        self.tokens.push(Token::new_str(
+                            tok, sym, Loc::from_usize(i+1, col+1)));
+                        col += j;
+                        self.content[i] = self.content[i][j..].to_string();
+                        continue;
+                    }
+                }
+                
                 {
                     self.tokens.push(Token::new_str(
                         ch as i32, ch.to_string(), 

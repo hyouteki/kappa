@@ -23,12 +23,18 @@ pub enum Expr {
 }
 
 fn get_op_prec(op: i32) -> i32 {
-    let ch: char = char::from_u32(op.try_into().unwrap()).unwrap();
-    match ch {
-        '*' | '/' => 60,
-        '+' | '-' => 40,
-        '<' | '>' => 20,
-        _ => -1,
+    if op < 0 {
+        match op {
+            lexer::TOK_COMP_LOW..=lexer::TOK_COMP_HIGH => 20,
+            _ => -1,
+        }
+    } else {
+        let ch: char = char::from_u32(op.try_into().unwrap()).unwrap();
+        match ch {
+            '*' | '/' => 60,
+            '+' | '-' => 40,
+            _ => -1,
+        }
     }
 }
 
@@ -49,8 +55,7 @@ impl fmt::Display for Expr {
 impl fmt::Display for BinExpr {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         write!(f, "BinExpr({}, Op({}), {})", self.lhs, 
-            std::char::from_u32(self.op.try_into()
-                .unwrap()).unwrap(), self.rhs)
+            lexer::token_kind_to_str(self.op), self.rhs)
     }
 }
 
