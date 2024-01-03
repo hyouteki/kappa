@@ -1,6 +1,7 @@
 use std::{fs::File, io::Write, collections::HashMap};
-use crate::fe::stmt::{Stmt, CFStmt, FunDefStmt, VarAssignStmt, Type, Block};
-use crate::fe::expr::{Expr, CallExpr, BinExpr};
+use crate::fe::stmt::{Stmt, CFStmt, VarAssignStmt, IfStmt, Type, Block};
+use crate::fe::expr::{Expr, CallExpr};
+use crate::fe::lexer::{TOK_GT, TOK_LT, TOK_GE, TOK_LE, TOK_EQ, TOK_NE};
 use crate::compiler_felf64::native_api::{is_native_api, compile_api};
 use crate::utils::{strlen};
 
@@ -11,19 +12,22 @@ pub struct Asm {
     counter: u32,
 }
 
+#[derive(Clone)]
 pub struct Var {
     pub bp_offset: u32,
     pub size: u32,
+    pub var_type: Type, 
 }
 
+#[derive(Clone)]
 pub struct Context {
     pub cur_bp_offset: u32,
     pub vars: HashMap<String, Var>,
 }
 
 impl Var {
-    fn new(bp_offset: u32, size: u32) -> Self {
-        Var{bp_offset: bp_offset, size: size}
+    fn new(bp_offset: u32, size: u32, var_type: Type) -> Self {
+        Var{bp_offset: bp_offset, size: size, var_type: var_type}
     }
 }
 
@@ -55,14 +59,14 @@ fn compile_var_assign(var_assign: &VarAssignStmt, asm: &mut Asm, ctx: &mut Conte
             let size = 4;
             let offset = ctx.cur_bp_offset + size;
             asm.text.push(format!("\tmov DWORD [rbp-{}], {}", offset, num));
-            ctx.vars.insert(var_assign.name.clone(), Var::new(offset, size));
+            ctx.vars.insert(var_assign.name.clone(), Var::new(offset, size, Type::Int));
             ctx.inc_bp_offset(size);
         },
         Expr::Bool(val) => {
             let size = 1;
             let offset = ctx.cur_bp_offset + size;
             asm.text.push(format!("\tmov BYTE [rbp-{}], {}", offset, val));
-            ctx.vars.insert(var_assign.name.clone(), Var::new(offset, size));
+            ctx.vars.insert(var_assign.name.clone(), Var::new(offset, size, Type::Bool));
             ctx.inc_bp_offset(size);
         },
         Expr::Str(text) => {
@@ -80,7 +84,7 @@ fn compile_var_assign(var_assign: &VarAssignStmt, asm: &mut Asm, ctx: &mut Conte
                 format!("L{}:", label_count),
                 format!("\tdb `{}`", text)
             ]);
-            ctx.vars.insert(var_assign.name.clone(), Var::new(offset, size));
+            ctx.vars.insert(var_assign.name.clone(), Var::new(offset, size, Type::Bool));
             ctx.inc_bp_offset(size);
         },
         _ => todo!("yet to be implemented")
@@ -94,11 +98,81 @@ fn compile_expr(expr: &Expr, asm: &mut Asm, ctx: &mut Context) {
     };
 }
 
+fn compile_block(block: &Block, asm: &mut Asm, ctx: &mut Context) {
+    // TODO: handle scopes
+    for stmt in block.stmts.iter() {compile(stmt, asm, ctx);}
+}
+
+fn access_expr_val(expr: &Expr, asm: &mut Asm, ctx: &mut Context) -> String {
+    match expr {
+        Expr::Int(num) => num.to_string(),
+        Expr::Str(text) => text.to_string(),
+        Expr::Bool(val) => if *val {"1".to_string()} else {"0".to_string()},
+        Expr::Var(name) => {
+            let var = ctx.vars.get(name).unwrap();
+            match var.var_type {
+                Type::Int => format!("DWORD [rbp-{}]", var.bp_offset),
+                Type::Bool => format!("BYTE [rbp-{}]", var.bp_offset),
+                Type::Str => format!("QWORD [rbp-{}]", var.bp_offset),
+            }
+        },
+        _ => todo!("to be implemented"),
+    }
+}
+
+fn compile_if(if_stmt: &IfStmt, asm: &mut Asm, ctx: &mut Context) {
+    let mut label_count = asm.get_and_inc();
+    let else_label = format!("L{}", label_count);
+    label_count = asm.get_and_inc();
+    let final_label = format!("L{}", label_count);
+    match &if_stmt.condition {
+        Expr::Bool(val) => {
+            if *val {
+                let mut then_block_ctx = ctx.clone();
+                compile_block(&if_stmt.then_block, asm, &mut then_block_ctx);
+                asm.text.push(format!("\tjmp {}", final_label));
+            } else {
+                let mut else_block_ctx = ctx.clone();
+                asm.text.push(format!("{}:", else_label));
+                compile_block(&if_stmt.else_block, asm, &mut else_block_ctx);
+                asm.text.push(format!("\tjmp {}", final_label));
+            }
+        },
+        Expr::Bin(x) => {
+            let comp_lhs: String = access_expr_val(&x.lhs, asm, ctx);
+            let comp_rhs: String = access_expr_val(&x.rhs, asm, ctx);
+            asm.text.push(format!("\tcmp {}, {}", comp_lhs, comp_rhs));
+            let cond_jmp: String = match x.op {
+                TOK_GT => "jle",
+                TOK_LT => "jge",
+                TOK_GE => "jl",
+                TOK_LE => "jg",
+                TOK_EQ => "jne",
+                TOK_NE => "je",
+                _ => unreachable!(),
+            }.to_string();
+            asm.text.push(format!("\t{} {}", cond_jmp, else_label));
+            let mut then_block_ctx = ctx.clone();
+            compile_block(&if_stmt.then_block, asm, &mut then_block_ctx);
+            asm.text.extend(vec![
+                format!("\tjmp {}", final_label),
+                format!("{}:", else_label),
+            ]);
+            let mut else_block_ctx = ctx.clone();
+            compile_block(&if_stmt.else_block, asm, &mut else_block_ctx);
+            asm.text.push(format!("\tjmp {}", final_label));
+        }
+        _ => unreachable!(),
+    };
+    asm.text.push(format!("{}:", final_label));
+}
+
 fn compile(stmt: &Stmt, asm: &mut Asm, ctx: &mut Context) {
     match stmt {
         Stmt::VarAssign(x) => compile_var_assign(x, asm, ctx),
         Stmt::ExprStmt(x) => compile_expr(x, asm, ctx),
-	    _ => todo!("Not yet implemented"),
+        Stmt::If(x) => compile_if(x, asm, ctx),
+        _ => todo!("Not yet implemented"),
     };
 }
 

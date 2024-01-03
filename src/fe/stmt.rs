@@ -4,7 +4,6 @@ use crate::fe::lexer::{self, Lexer, token_kind_to_str};
 
 pub struct Block {
     pub stmts: Vec<Stmt>,
-    vars: HashMap<String, Expr>,
 }
 
 #[derive(Copy, Clone, PartialEq)]
@@ -14,6 +13,7 @@ pub enum Type {
     Bool,
 }
 
+#[derive(Clone)]
 pub struct Arg {
     pub name: String,
     pub arg_type: Type, 
@@ -67,15 +67,9 @@ impl Arg {
 }
 
 impl Block {
-    fn new(stmts: Vec<Stmt>) -> Self {
-        Block{stmts: stmts, vars: HashMap::new()}
-    }
-    fn new_empty() -> Self {
-        Block{stmts: Vec::new(), vars: HashMap::new()}
-    }
-    pub fn is_empty(&self) -> bool {
-        self.stmts.is_empty()
-    } 
+    fn new(stmts: Vec<Stmt>) -> Self {Block{stmts: stmts}}
+    fn new_empty() -> Self {Block{stmts: Vec::new()}}
+    pub fn is_empty(&self) -> bool {self.stmts.is_empty()} 
 }
 
 impl VarAssignStmt {
