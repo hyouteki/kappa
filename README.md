@@ -4,7 +4,8 @@
 ## Quick Start
 ``` console
 cargo build
-cargo run -- compile --cpp -f eg/main.K
-g++ eg/main.cpp -o eg/main
+cargo run -- compile --felf64 -f ./eg/main.K
+nasm -felf64 ./eg/main.asm -o ./eg/main.o
+ld ./eg/main.o -o ./eg/main
 ./eg/main
 ```
