@@ -1,9 +1,12 @@
 var x: int = 69;
 val y: str = "Hello moto\n";
-if (x != 69) {
-    exit(1);
+print("If Start\n");
+if (x == 69) {
+    val z: str = "Inside then block\n"; 
+    print(z);
 } else {
-    exit(2);
+    print("Inside else block\n");
 }
-print(y);
+val z: str = "If end\n";
+print(z);
 exit(x);

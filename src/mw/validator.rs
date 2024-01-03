@@ -108,7 +108,7 @@ fn validate_expr(expr: &Expr, ctx: &Context) {
     }
 }
 
-fn block_validator(block: &Block, ctx: &mut Context) {
+fn validate_block(block: &Block, ctx: &mut Context) {
     for stmt in block.stmts.iter() {validate_stmt(stmt, ctx);}
 }
 
@@ -116,11 +116,11 @@ fn validate_if_stmt(if_stmt: &IfStmt, ctx: &Context) {
     validate_type_with_expr(&Type::Bool, &if_stmt.condition, ctx);
     if !if_stmt.then_block.is_empty() {
         let mut then_block_ctx: Context = ctx.clone();
-        block_validator(&if_stmt.then_block, &mut then_block_ctx);
+        validate_block(&if_stmt.then_block, &mut then_block_ctx);
     }
     if !if_stmt.else_block.is_empty() {
         let mut else_block_ctx: Context = ctx.clone();
-        block_validator(&if_stmt.else_block, &mut else_block_ctx);
+        validate_block(&if_stmt.else_block, &mut else_block_ctx);
     }
 }
 

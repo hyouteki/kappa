@@ -82,7 +82,7 @@ fn compile_var_assign(var_assign: &VarAssignStmt, asm: &mut Asm, ctx: &mut Conte
             asm.text.push(format!("\tmov QWORD [rbp-{}], L{}", offset, label_count));
             asm.data.extend(vec![
                 format!("L{}:", label_count),
-                format!("\tdb `{}`", text)
+                format!("\tdb `{}`, 0", text)
             ]);
             ctx.vars.insert(var_assign.name.clone(), Var::new(offset, size, Type::Bool));
             ctx.inc_bp_offset(size);
@@ -99,7 +99,6 @@ fn compile_expr(expr: &Expr, asm: &mut Asm, ctx: &mut Context) {
 }
 
 fn compile_block(block: &Block, asm: &mut Asm, ctx: &mut Context) {
-    // TODO: handle scopes
     for stmt in block.stmts.iter() {compile(stmt, asm, ctx);}
 }
 

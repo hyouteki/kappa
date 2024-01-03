@@ -1,7 +1,7 @@
 use std::{process::exit, collections::HashSet};
 use crate::fe::expr::{Expr, CallExpr};
 use crate::compiler_felf64::compiler::{Asm, Var, Context};
-use crate::utils::{error, assert};
+use crate::utils::{error, assert, strlen};
 
 fn compile_exit(call: &CallExpr, asm: &mut Asm, ctx: &Context) {
     asm.text.push("\tmov rax, 60".to_string());
@@ -21,13 +21,13 @@ fn compile_print(call: &CallExpr, asm: &mut Asm, ctx: &Context) {
             let label_count = asm.get_and_inc();
             asm.data.extend(vec![
                 format!("L{}:", label_count),
-                format!("\tdb `{}`", text),
+                format!("\tdb `{}`, 0", text),
             ]);
             asm.text.extend(vec![
                 "\tmov rax, 1".to_string(),
                 "\tmov rdi, 1".to_string(),
                 format!("\tmov rsi, L{}", label_count),
-                format!("\tmov rdx, {}", text.len()+1),
+                format!("\tmov rdx, {}", strlen(text)+1),
                 "\tsyscall".to_string(),
             ]);
         },
