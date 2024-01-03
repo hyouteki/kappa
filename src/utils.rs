@@ -8,3 +8,9 @@ pub fn error(message: String) {
 pub fn assert(eval: bool, message: String) {
     if !eval {error(message);} 
 }
+
+pub fn strlen(text: &String) -> usize {
+    let escaped_text = text
+        .replace("\\n", "\n");
+    escaped_text.len()
+}

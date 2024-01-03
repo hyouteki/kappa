@@ -2,6 +2,7 @@ use std::{fs::File, io::Write, collections::HashMap};
 use crate::fe::stmt::{Stmt, CFStmt, FunDefStmt, VarAssignStmt, Type, Block};
 use crate::fe::expr::{Expr, CallExpr, BinExpr};
 use crate::compiler_felf64::native_api::{is_native_api, compile_api};
+use crate::utils::{strlen};
 
 pub struct Asm {
     pub glob: Vec<String>,
@@ -28,7 +29,7 @@ impl Var {
 
 impl Context {
     fn new() -> Self {
-        Context{cur_bp_offset: 4, vars: HashMap::new()}
+        Context{cur_bp_offset: 0, vars: HashMap::new()}
     }
     fn inc_bp_offset(&mut self, size: u32) {
         self.cur_bp_offset += size;
@@ -49,14 +50,40 @@ fn compile_call_expr(call: &CallExpr, asm: &mut Asm, ctx: &mut Context) {
 }
 
 fn compile_var_assign(var_assign: &VarAssignStmt, asm: &mut Asm, ctx: &mut Context) {
-    match var_assign.expr {
+    match &var_assign.expr {
         Expr::Int(num) => {
-            let offset = ctx.cur_bp_offset;
+            let size = 4;
+            let offset = ctx.cur_bp_offset + size;
             asm.text.push(format!("\tmov DWORD [rbp-{}], {}", offset, num));
-            ctx.vars.insert(var_assign.name.clone(), Var::new(offset, 4));
-            ctx.inc_bp_offset(4);
+            ctx.vars.insert(var_assign.name.clone(), Var::new(offset, size));
+            ctx.inc_bp_offset(size);
         },
-        _ => {}
+        Expr::Bool(val) => {
+            let size = 1;
+            let offset = ctx.cur_bp_offset + size;
+            asm.text.push(format!("\tmov BYTE [rbp-{}], {}", offset, val));
+            ctx.vars.insert(var_assign.name.clone(), Var::new(offset, size));
+            ctx.inc_bp_offset(size);
+        },
+        Expr::Str(text) => {
+            // storing the string length
+            let len_size = 4;
+            let len_offset = ctx.cur_bp_offset + len_size;
+            asm.text.push(format!("\tmov DWORD [rbp-{}], {}", len_offset, strlen(text)+1));
+            ctx.inc_bp_offset(len_size);
+            // storing the string
+            let size = 8;
+            let offset = ctx.cur_bp_offset + size;
+            let label_count = asm.get_and_inc();
+            asm.text.push(format!("\tmov QWORD [rbp-{}], L{}", offset, label_count));
+            asm.data.extend(vec![
+                format!("L{}:", label_count),
+                format!("\tdb `{}`", text)
+            ]);
+            ctx.vars.insert(var_assign.name.clone(), Var::new(offset, size));
+            ctx.inc_bp_offset(size);
+        },
+        _ => todo!("yet to be implemented")
     }
 }
 

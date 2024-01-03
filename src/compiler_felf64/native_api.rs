@@ -1,6 +1,6 @@
 use std::{process::exit, collections::HashSet};
 use crate::fe::expr::{Expr, CallExpr};
-use crate::compiler_felf64::compiler::{Asm, Context};
+use crate::compiler_felf64::compiler::{Asm, Var, Context};
 use crate::utils::{error, assert};
 
 fn compile_exit(call: &CallExpr, asm: &mut Asm, ctx: &Context) {
@@ -15,18 +15,34 @@ fn compile_exit(call: &CallExpr, asm: &mut Asm, ctx: &Context) {
     asm.text.push("\tsyscall".to_string());
 }
 
-fn compile_print(call: &CallExpr, asm: &mut Asm) {
-    if let Expr::Str(text) = &call.args[0] {
-        let label_count = asm.get_and_inc();
-        // TODO: handle excape characters
-        asm.data.push(format!("L{}:", label_count));
-        asm.data.push(format!("\tdw '{}'", text));
-        asm.text.push(format!("\tmov rax, 1"));
-	    asm.text.push(format!("\tmov rdi, 1"));
-	    asm.text.push(format!("\tmov rsi, L{}", label_count));
-	    asm.text.push(format!("\tmov rdx, {}", text.len()+1));
-        asm.text.push(format!("\tsyscall"));
-    }
+fn compile_print(call: &CallExpr, asm: &mut Asm, ctx: &Context) {
+    match &call.args[0] {
+        Expr::Str(text) => {
+            let label_count = asm.get_and_inc();
+            asm.data.extend(vec![
+                format!("L{}:", label_count),
+                format!("\tdb `{}`", text),
+            ]);
+            asm.text.extend(vec![
+                "\tmov rax, 1".to_string(),
+                "\tmov rdi, 1".to_string(),
+                format!("\tmov rsi, L{}", label_count),
+                format!("\tmov rdx, {}", text.len()+1),
+                "\tsyscall".to_string(),
+            ]);
+        },
+        Expr::Var(name) => {
+            let var = ctx.vars.get(name).unwrap();
+            asm.text.extend(vec![
+                "\tmov rax, 1".to_string(),
+                "\tmov rdi, 1".to_string(),
+                format!("\tmov rsi, QWORD [rbp-{}]", var.bp_offset),
+                format!("\tmov edx, DWORD [rbp-{}]", var.bp_offset-8),
+                "\tsyscall".to_string(),
+            ]);
+        }
+        _ => unreachable!(),
+    };
 }
 
 pub fn is_native_api(name: &String) -> bool {
@@ -36,7 +52,7 @@ pub fn is_native_api(name: &String) -> bool {
 pub fn compile_api(call: &CallExpr, asm: &mut Asm, ctx: &mut Context) {
     match call.name.as_str() {
 	    "exit" => compile_exit(call, asm, ctx),
-        "print" => compile_print(call, asm),
+        "print" => compile_print(call, asm, ctx),
 	    _ => {},
     };
 }
