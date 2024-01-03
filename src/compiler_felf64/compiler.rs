@@ -1,9 +1,9 @@
 use std::{fs::File, io::Write, collections::HashMap};
 use crate::fe::stmt::{Stmt, CFStmt, VarAssignStmt, IfStmt, Type, Block};
-use crate::fe::expr::{Expr, CallExpr};
+use crate::fe::expr::{Expr, CallExpr, BinExpr};
 use crate::fe::lexer::{TOK_GT, TOK_LT, TOK_GE, TOK_LE, TOK_EQ, TOK_NE};
 use crate::compiler_felf64::native_api::{is_native_api, compile_api};
-use crate::utils::{strlen};
+use crate::utils::{error, strlen};
 
 pub struct Asm {
     pub glob: Vec<String>,
@@ -87,6 +87,15 @@ fn compile_var_assign(var_assign: &VarAssignStmt, asm: &mut Asm, ctx: &mut Conte
             ctx.vars.insert(var_assign.name.clone(), Var::new(offset, size, Type::Bool));
             ctx.inc_bp_offset(size);
         },
+        Expr::Bin(_) => {
+            let _ = access_expr_val(&var_assign.expr, asm, ctx);
+            // TODO: assuming that bin_expr will result in only int
+            let size = 4;
+            let offset = ctx.cur_bp_offset + size; 
+            asm.text.push(format!("\tmov DWORD [rbp-{}], eax", offset));
+            ctx.vars.insert(var_assign.name.clone(), Var::new(offset, size, Type::Int));
+            ctx.inc_bp_offset(size);
+        }
         _ => todo!("yet to be implemented")
     }
 }
@@ -115,7 +124,30 @@ fn access_expr_val(expr: &Expr, asm: &mut Asm, ctx: &mut Context) -> String {
                 Type::Str => format!("QWORD [rbp-{}]", var.bp_offset),
             }
         },
-        _ => todo!("to be implemented"),
+        Expr::Bin(bin_expr) => {
+            let lhs = access_expr_val(&bin_expr.lhs, asm, ctx);
+            asm.text.push(format!("\tpush {}", lhs));
+            let rhs = access_expr_val(&bin_expr.rhs, asm, ctx);
+            asm.text.push(format!("\tpush {}", rhs));
+            if bin_expr.op < 0 {todo!("TODO: access_expr_val::Bin::Op < 0 (Named Operators)")}
+            asm.text.extend(vec![
+                "\tpop rbx".to_string(),
+                "\tpop rax".to_string(),
+            ]);
+            let op_char = char::from_u32(bin_expr.op.try_into().unwrap()).unwrap();
+            asm.text.push(match op_char {
+                '+' => "\tadd rax, rbx",
+                '-' => "\tsub rax, rbx",
+                '*' => "\tmul rbx",
+                '/' => "\tdiv rbx",
+                _ => {
+                    error(format!("unsupported operator {}", op_char));
+                    unreachable!()
+                }
+            }.to_string());
+            "rax".to_string()
+        }
+        _ => todo!("TODO: access_expr_val"),
     }
 }
 

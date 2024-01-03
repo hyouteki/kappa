@@ -1,4 +1,4 @@
-nasm -felf64 asm.asm
-ld asm.o -o asm
-./asm
+nasm -felf64 dev.asm
+ld dev.o -o dev
+./dev
 echo $?

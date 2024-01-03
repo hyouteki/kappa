@@ -6,7 +6,7 @@ use crate::utils::{error, assert, strlen};
 fn compile_exit(call: &CallExpr, asm: &mut Asm, ctx: &Context) {
     asm.text.push("\tmov rax, 60".to_string());
     match &call.args[0] {
-        Expr::Int(num) => asm.text.push(format!("\tmov edi, {}", num)),
+        Expr::Int(num) => asm.text.push(format!("\tmov rdi, {}", num)),
         Expr::Var(name) => asm.text.push(format!(
             "\tmov edi, DWORD [rbp-{}]",
             ctx.vars.get(name).unwrap().bp_offset)),

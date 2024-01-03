@@ -1,1 +1,1 @@
-rm -rf asm asm.o asm.asm main.exe main.cpp
+rm -rf dev *.o *.asm *.exe *.cpp
