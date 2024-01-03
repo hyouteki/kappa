@@ -1,21 +1,24 @@
 use std::{process::exit, collections::HashSet};
 use crate::fe::expr::{Expr, CallExpr};
-use crate::compiler_felf64::compiler::{Asm, Var, Context};
+use crate::compiler_felf64::compiler::{Asm, Var, Context, access_expr_val};
 use crate::utils::{error, assert, strlen};
 
-fn compile_exit(call: &CallExpr, asm: &mut Asm, ctx: &Context) {
-    asm.text.push("\tmov rax, 60".to_string());
-    match &call.args[0] {
-        Expr::Int(num) => asm.text.push(format!("\tmov rdi, {}", num)),
-        Expr::Var(name) => asm.text.push(format!(
-            "\tmov edi, DWORD [rbp-{}]",
-            ctx.vars.get(name).unwrap().bp_offset)),
-        _ => unreachable!(),
-    };
-    asm.text.push("\tsyscall".to_string());
+fn rbx_or_ebx(value: &String) -> String {
+    if value.starts_with("DWORD") {"ebx".to_string()}
+    else {"rbx".to_string()}
 }
 
-fn compile_print(call: &CallExpr, asm: &mut Asm, ctx: &Context) {
+fn compile_exit(call: &CallExpr, asm: &mut Asm, ctx: &mut Context) {
+    let result: String = access_expr_val(&call.args[0], asm, ctx);
+    asm.text.extend(vec![
+        format!("\tmov {}, {}", rbx_or_ebx(&result), result),
+        "\tmov rax, 60".to_string(),
+        "\tmov rdi, rbx".to_string(),
+        "\tsyscall".to_string(),
+    ]);
+}
+
+fn compile_print(call: &CallExpr, asm: &mut Asm, ctx: &mut Context) {
     match &call.args[0] {
         Expr::Str(text) => {
             let label_count = asm.get_and_inc();

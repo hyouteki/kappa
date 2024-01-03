@@ -1,1 +1,1 @@
-rm -rf dev *.o *.asm *.exe *.cpp
+rm -rf test *.o *.asm *.exe *.cpp

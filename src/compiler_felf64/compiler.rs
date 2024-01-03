@@ -111,7 +111,7 @@ fn compile_block(block: &Block, asm: &mut Asm, ctx: &mut Context) {
     for stmt in block.stmts.iter() {compile(stmt, asm, ctx);}
 }
 
-fn access_expr_val(expr: &Expr, asm: &mut Asm, ctx: &mut Context) -> String {
+pub fn access_expr_val(expr: &Expr, asm: &mut Asm, ctx: &mut Context) -> String {
     match expr {
         Expr::Int(num) => num.to_string(),
         Expr::Str(text) => text.to_string(),
