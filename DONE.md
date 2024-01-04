@@ -1,0 +1,11 @@
+## What can this compile
+- [x] Exit api
+- [x] Variable Assignment Statement
+- [ ] Print api
+  - [x] just one string at a time
+- [x] If Stmt
+- [x] Top Level Function-Calls 
+- [x] Integer Binary Expressions
+- [ ] While Statement
+- [ ] Control Flow Statement
+- [ ] Function Defination

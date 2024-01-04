@@ -47,6 +47,12 @@ impl Asm {
         self.counter += 1;
         ret
     }
+    pub fn push(&mut self, data: &String) {
+        if data.starts_with("DWORD") {
+            self.text.push(format!("\tmov ecx, {}", data));
+        } else {self.text.push(format!("\tmov rcx, {}", data));}
+        self.text.push("\tpush rcx".to_string());
+    }
 }
 
 fn compile_call_expr(call: &CallExpr, asm: &mut Asm, ctx: &mut Context) {
@@ -103,7 +109,7 @@ fn compile_var_assign(var_assign: &VarAssignStmt, asm: &mut Asm, ctx: &mut Conte
 fn compile_expr(expr: &Expr, asm: &mut Asm, ctx: &mut Context) {
     match expr {
 	    Expr::Call(x) => compile_call_expr(x, asm, ctx),
-	    _ => todo!("Not yet implemented"),
+	    _ => {/*any other expression at top level domain does not make sense to compute*/},
     };
 }
 
@@ -126,9 +132,9 @@ pub fn access_expr_val(expr: &Expr, asm: &mut Asm, ctx: &mut Context) -> String 
         },
         Expr::Bin(bin_expr) => {
             let lhs = access_expr_val(&bin_expr.lhs, asm, ctx);
-            asm.text.push(format!("\tpush {}", lhs));
+            asm.push(&lhs);
             let rhs = access_expr_val(&bin_expr.rhs, asm, ctx);
-            asm.text.push(format!("\tpush {}", rhs));
+            asm.push(&rhs);
             if bin_expr.op < 0 {todo!("TODO: access_expr_val::Bin::Op < 0 (Named Operators)")}
             asm.text.extend(vec![
                 "\tpop rbx".to_string(),
@@ -151,6 +157,13 @@ pub fn access_expr_val(expr: &Expr, asm: &mut Asm, ctx: &mut Context) -> String 
     }
 }
 
+fn compare_exprs(expr1: &Expr, expr2: &Expr, asm: &mut Asm, ctx: &mut Context) {
+    let lhs: String = access_expr_val(expr1, asm, ctx);
+    asm.text.push(format!("\tmov rbx, {}", lhs));
+    let rhs: String = access_expr_val(expr2, asm, ctx);
+    asm.text.push(format!("\tcmp rbx, {}", rhs));
+}
+
 fn compile_if(if_stmt: &IfStmt, asm: &mut Asm, ctx: &mut Context) {
     let mut label_count = asm.get_and_inc();
     let else_label = format!("L{}", label_count);
@@ -170,9 +183,7 @@ fn compile_if(if_stmt: &IfStmt, asm: &mut Asm, ctx: &mut Context) {
             }
         },
         Expr::Bin(x) => {
-            let comp_lhs: String = access_expr_val(&x.lhs, asm, ctx);
-            let comp_rhs: String = access_expr_val(&x.rhs, asm, ctx);
-            asm.text.push(format!("\tcmp {}, {}", comp_lhs, comp_rhs));
+            compare_exprs(&x.lhs, &x.rhs, asm, ctx);
             let cond_jmp: String = match x.op {
                 TOK_GT => "jle",
                 TOK_LT => "jge",
