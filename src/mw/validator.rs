@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use crate::fe::expr::{Expr, CallExpr, BinExpr};
-use crate::fe::stmt::{VarAssignStmt, VarMutStmt, IfStmt, Stmt, Block, Arg, Type};
+use crate::fe::stmt::{VarAssignStmt, VarMutStmt, WhileStmt, IfStmt, Stmt, Block, Arg, Type};
 use crate::fe::lexer::{TOK_COMP_LOW, TOK_COMP_HIGH};
 use crate::mw::native_api::get_native_apis;
 use crate::utils::{error, assert};
@@ -137,11 +137,20 @@ fn validate_var_mut(var_mut_stmt: &VarMutStmt, ctx: &mut Context) {
     validate_type_with_expr(&var.expr_type, &var_mut_stmt.expr, ctx);
 }
 
+fn validate_while(while_stmt: &WhileStmt, ctx: &mut Context) {
+    validate_type_with_expr(&Type::Bool, &while_stmt.condition, ctx);
+    if !while_stmt.block.is_empty() {
+        let mut block_ctx: Context = ctx.clone();
+        validate_block(&while_stmt.block, &mut block_ctx);
+    }
+}
+
 fn validate_stmt(stmt: &Stmt, ctx: &mut Context) {
     match stmt {
 	    Stmt::VarAssign(x) => validate_var_assign_stmt(x, ctx),
         Stmt::ExprStmt(x) => validate_expr(x, ctx),
         Stmt::If(x) => validate_if_stmt(x, ctx),
+        Stmt::While(x) => validate_while(x, ctx),
         Stmt::VarMut(x) => validate_var_mut(x, ctx),
         _ => {},
     }

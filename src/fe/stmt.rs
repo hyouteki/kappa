@@ -190,6 +190,7 @@ impl fmt::Display for Stmt {
             Stmt::ExprStmt(x) => write!(f, "{}", x),
             Stmt::If(x) => write!(f, "{}", x),
             Stmt::CF(x) => write!(f, "{}", x),
+            Stmt::While(x) => write!(f, "{}", x),
             _ => todo!("Not yet implemented"),
         }        
     }
@@ -232,8 +233,11 @@ pub fn parse_stmt(lexer: &mut Lexer) -> Option<Stmt> {
         lexer::TOK_FN => parse_fun_def(lexer),
         lexer::TOK_VAR | lexer::TOK_VAL => parse_var_assign(lexer),
         lexer::TOK_IF => parse_if(lexer),
-        lexer::TOK_ELSE => todo!("To be implemented"),
-        lexer::TOK_WHILE => todo!("To be implemented"),
+        lexer::TOK_ELSE => {
+            lexer.error("expected an if branch before an \"this\" else branch".to_string(), None);
+            unreachable!()
+        },
+        lexer::TOK_WHILE => parse_while(lexer),
         lexer::TOK_RETURN => parse_return(lexer),
         x if x == tok_colon => {
             lexer.eat(); // eat ';'

@@ -208,9 +208,8 @@ impl Lexer {
                             j += 1;
                             ch = self.content[i].chars().nth(j).unwrap();
                         }
-                        if sym.len() == 1 {
-                            self.tokens.push(Token::new_str(
-                                sym.chars().nth(0).unwrap() as i32, sym,
+                        if sym == "=" {
+                            self.tokens.push(Token::new_str('=' as i32, sym,
                                 Loc::from_usize(i+1, col+1)));
                             col += 1;
                             self.content[i] = self.content[i][1..].to_string();

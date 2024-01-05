@@ -1,5 +1,5 @@
 use std::{fs::File, io::Write, collections::HashMap};
-use crate::fe::stmt::{Stmt, CFStmt, VarAssignStmt, VarMutStmt, IfStmt, Type, Block};
+use crate::fe::stmt::{Stmt, CFStmt, VarAssignStmt, VarMutStmt, IfStmt, WhileStmt, Type, Block};
 use crate::fe::expr::{Expr, CallExpr, BinExpr};
 use crate::fe::lexer::{TOK_GT, TOK_LT, TOK_GE, TOK_LE, TOK_EQ, TOK_NE};
 use crate::compiler_felf64::native_api::{is_native_api, compile_api};
@@ -52,6 +52,23 @@ impl Asm {
             self.text.push(format!("\tmov ecx, {}", data));
         } else {self.text.push(format!("\tmov rcx, {}", data));}
         self.text.push("\tpush rcx".to_string());
+    }
+    pub fn mov_to_reg(&mut self, reg: &String, data: &String) {
+        self.text.push(format!("\tmov {}{}, {}",
+                               {if data.starts_with("DWORD") {"e"} else {"r"}}.to_string(), reg, data));
+    }
+    pub fn mov_from_reg(&mut self, data: &String, reg: &String) {
+        self.text.push(format!("\tmov {}, {}{}", data,
+                               {if data.starts_with("DWORD") {"e"} else {"r"}}.to_string(), reg));
+    }
+    pub fn is_reg(data: &String) -> bool {
+        vec!["rax", "rbx", "rcx", "eax", "ebx", "ecx"].contains(&data.as_str())
+    }
+    pub fn mov(&mut self, to: &String, from: &String) {
+        let mut flag: bool = true;
+        if Asm::is_reg(from) {flag = false; self.mov_from_reg(to, &from[1..].to_string());}
+        if Asm::is_reg(to) {flag = false; self.mov_to_reg(&to[1..].to_string(), from);}
+        if flag {self.text.push(format!("\tmov {}, {}", to, from));}
     }
 }
 
@@ -116,7 +133,7 @@ fn compile_expr(expr: &Expr, asm: &mut Asm, ctx: &mut Context) {
 fn compile_var_mut(var_mut: &VarMutStmt, asm: &mut Asm, ctx: &mut Context) {
     let var_eval = access_expr_val(&Expr::Var(var_mut.name.clone()), asm, ctx);
     let expr_eval = access_expr_val(&var_mut.expr, asm, ctx);
-    asm.text.push(format!("\tmov {}, {}", var_eval, expr_eval));
+    asm.mov(&var_eval, &expr_eval);
 }
 
 fn compile_block(block: &Block, asm: &mut Asm, ctx: &mut Context) {
@@ -172,7 +189,7 @@ pub fn access_expr_val(expr: &Expr, asm: &mut Asm, ctx: &mut Context) -> String 
 
 fn compare_exprs(expr1: &Expr, expr2: &Expr, asm: &mut Asm, ctx: &mut Context) {
     let lhs: String = access_expr_val(expr1, asm, ctx);
-    asm.text.push(format!("\tmov rbx, {}", lhs));
+    asm.mov_to_reg(&"bx".to_string(), &lhs);
     let rhs: String = access_expr_val(expr2, asm, ctx);
     asm.text.push(format!("\tcmp rbx, {}", rhs));
 }
@@ -222,12 +239,48 @@ fn compile_if(if_stmt: &IfStmt, asm: &mut Asm, ctx: &mut Context) {
     asm.text.push(format!("{}:", final_label));
 }
 
+fn compile_while(while_stmt: &WhileStmt, asm: &mut Asm, ctx: &mut Context) {
+    let mut label_count = asm.get_and_inc();
+    let while_label = format!("L{}", label_count);
+    label_count = asm.get_and_inc();
+    let final_label = format!("L{}", label_count);
+    asm.text.push(format!("{}:", while_label));
+    match &while_stmt.condition {
+        Expr::Bool(val) => {
+            if *val {
+                let mut block_ctx = ctx.clone();
+                compile_block(&while_stmt.block, asm, &mut block_ctx);
+                asm.text.push(format!("\tjmp {}", while_label));
+            } else {asm.text.push(format!("\tjmp {}", final_label));}
+        },
+        Expr::Bin(x) => {
+            compare_exprs(&x.lhs, &x.rhs, asm, ctx);
+            let cond_jmp: String = match x.op {
+                TOK_GT => "jle",
+                TOK_LT => "jge",
+                TOK_GE => "jl",
+                TOK_LE => "jg",
+                TOK_EQ => "jne",
+                TOK_NE => "je",
+                _ => unreachable!(),
+            }.to_string();
+            asm.text.push(format!("\t{} {}", cond_jmp, final_label));
+            let mut block_ctx = ctx.clone();
+            compile_block(&while_stmt.block, asm, &mut block_ctx);
+            asm.text.push(format!("\tjmp {}", while_label));
+        }
+        _ => unreachable!(),
+    };
+    asm.text.push(format!("{}:", final_label));
+}
+
 fn compile(stmt: &Stmt, asm: &mut Asm, ctx: &mut Context) {
     match stmt {
         Stmt::VarAssign(x) => compile_var_assign(x, asm, ctx),
         Stmt::ExprStmt(x) => compile_expr(x, asm, ctx),
         Stmt::If(x) => compile_if(x, asm, ctx),
         Stmt::VarMut(x) => compile_var_mut(x, asm, ctx),
+        Stmt::While(x) => compile_while(x, asm, ctx),
         _ => todo!("Not yet implemented"),
     };
 }
