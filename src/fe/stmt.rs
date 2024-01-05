@@ -44,6 +44,11 @@ pub struct WhileStmt {
     pub block: Block,
 }
 
+pub struct VarMutStmt {
+    pub name: String,
+    pub expr: Expr,
+}
+
 pub enum CFStmt {
     Return(Expr),
     Break,
@@ -54,6 +59,7 @@ pub enum Stmt {
     BlockStmt(Box<Block>),
     FunDef(FunDefStmt),
     VarAssign(VarAssignStmt),
+    VarMut(VarMutStmt),
     If(IfStmt),
     While(WhileStmt),
     CF(CFStmt),
@@ -73,18 +79,20 @@ impl Block {
 }
 
 impl VarAssignStmt {
-    fn new(name: String, var_type: Type, expr: Expr, 
-        mutable: bool) -> Self {
-        VarAssignStmt{name: name, var_type: var_type, 
-            expr: expr, mutable: mutable}
+    fn new(name: String, var_type: Type, expr: Expr, mutable: bool) -> Self {
+        VarAssignStmt{name: name, var_type: var_type, expr: expr, mutable: mutable}
+    }
+}
+
+impl VarMutStmt {
+    fn new(name: String, expr: Expr) -> Self {
+        VarMutStmt{name: name, expr: expr}
     }
 }
 
 impl FunDefStmt {
-    fn new(name: String, args: Vec<Arg>, 
-        return_type: Type, block: Block) -> Self {
-        FunDefStmt{name: name, args: args, 
-            return_type: return_type, block: block}
+    fn new(name: String, args: Vec<Arg>, return_type: Type, block: Block) -> Self {
+        FunDefStmt{name: name, args: args, return_type: return_type, block: block}
     }
 }
 
@@ -104,19 +112,21 @@ impl fmt::Display for VarAssignStmt {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let _ = write!(f, "VarAssignStmt ");
         if self.mutable {let _ = write!(f, "Mutable ");}
-        write!(f, "Name({}): Type({}) = {}", self.name, 
-            self.var_type, self.expr)
+        write!(f, "Name({}): Type({}) = {}", self.name, self.var_type, self.expr)
+    }
+}
+
+impl fmt::Display for VarMutStmt {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "VarMutStmt Name({}) = {}", self.name, self.expr)
     }
 }
 
 impl fmt::Display for FunDefStmt {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let _ = write!(f, "FunDefStmt Name({}) Args(", self.name);
-        for arg in self.args.iter() {
-            let _ = write!(f, "{}, ", arg);
-        }
-        write!(f, "): ReturnType({}) {}", 
-            self.return_type, self.block)
+        for arg in self.args.iter() {let _ = write!(f, "{}, ", arg);}
+        write!(f, "): ReturnType({}) {}", self.return_type, self.block)
     }
 }
 
@@ -139,9 +149,7 @@ impl fmt::Display for Arg {
 impl fmt::Display for Block {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         let _ = write!(f, "{{\n");
-        for stmt in self.stmts.iter() {
-            let _ = write!(f, "\t{}\n", stmt);
-        }
+        for stmt in self.stmts.iter() {let _ = write!(f, "\t{}\n", stmt);}
         write!(f, "}}")
     }
 }
@@ -158,8 +166,7 @@ impl fmt::Display for CFStmt {
 
 impl fmt::Display for IfStmt {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        let _ = write!(f, "IfStmt Condition({}) {}", 
-            self.condition, self.then_block);
+        let _ = write!(f, "IfStmt Condition({}) {}", self.condition, self.then_block);
         match self.else_block.is_empty() {
             false => write!(f, " else {}", self.else_block),
             true => write!(f, ""),
@@ -169,8 +176,7 @@ impl fmt::Display for IfStmt {
 
 impl fmt::Display for WhileStmt {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "WhileStmt Condition({}) {}", 
-            self.condition, self.block)
+        write!(f, "WhileStmt Condition({}) {}", self.condition, self.block)
     }
 }
 
@@ -179,6 +185,7 @@ impl fmt::Display for Stmt {
         match &self {
             Stmt::FunDef(x) => write!(f, "{}", x),
             Stmt::VarAssign(x) => write!(f, "{}", x),
+            Stmt::VarMut(x) => write!(f, "{}", x),
             Stmt::BlockStmt(x) => write!(f, "{}", x),
             Stmt::ExprStmt(x) => write!(f, "{}", x),
             Stmt::If(x) => write!(f, "{}", x),
@@ -213,8 +220,7 @@ fn parse_block(lexer: &mut Lexer) -> Block {
             Some(x) => stmts.push(x),
             None => {},
         }
-        if !lexer.empty() && 
-            lexer.is_token_kind('}' as i32) {break;}     
+        if !lexer.empty() && lexer.is_token_kind('}' as i32) {break;}     
     }    
     lexer.eat(); // eat '}'
     Block::new(stmts)
@@ -233,13 +239,15 @@ pub fn parse_stmt(lexer: &mut Lexer) -> Option<Stmt> {
             lexer.eat(); // eat ';'
             None
         }
-        _ => {
-            match parse_expr(lexer) {
-                Some(x) => {return Some(Stmt::ExprStmt(x));},
-                None => {},
-            };
-            lexer.error(String::from("invalid stmt"), None);
-            None
+        _ => match parse_expr(lexer) {
+            Some(expr) => match expr {
+                Expr::Var(name) => match try_parse_var_mut(lexer, &name) {
+                    Some(stmt) => Some(stmt),
+                    None => Some(Stmt::ExprStmt(Expr::Var(name.clone()))),
+                },
+                _ => Some(Stmt::ExprStmt(expr)),
+            },
+            None => {lexer.error(String::from("invalid stmt"), None); unreachable!()},
         }
     }
 }
@@ -249,8 +257,7 @@ fn parse_return(lexer: &mut Lexer) -> Option<Stmt> {
     lexer.eat(); // eat return
     let expr: Expr = match parse_expr(lexer) {
         Some(x) => x,
-        None => {lexer.error(String::from("invalid expr"), 
-            None); unreachable!()},
+        None => {lexer.error(String::from("invalid expr"), None); unreachable!()},
     };
     Some(Stmt::CF(CFStmt::Return(expr)))
 }
@@ -277,8 +284,7 @@ fn parse_while(lexer: &mut Lexer) -> Option<Stmt> {
     lexer.eat(); // eat while
     let condition: Expr = match parse_expr(lexer) {
         Some(x) => x,
-        None => {lexer.error(String::from("invalid expr"), 
-            None); unreachable!()}
+        None => {lexer.error(String::from("invalid expr"), None); unreachable!()}
     };
     let block: Block = parse_block(lexer);
     Some(Stmt::While(WhileStmt::new(condition, block)))
@@ -296,8 +302,7 @@ fn parse_var_assign(lexer: &mut Lexer) -> Option<Stmt> {
     };
     lexer.eat(); // eat 'var' or 'val'
     lexer.assert_token_kind(lexer::TOK_IDEN);
-    let name: String = lexer.front().get_str_val()
-        .unwrap().to_string();
+    let name: String = lexer.front().get_str_val().unwrap().to_string();
     lexer.eat(); // eat name
     lexer.assert_token_kind(':' as i32);
     lexer.eat();
@@ -305,8 +310,16 @@ fn parse_var_assign(lexer: &mut Lexer) -> Option<Stmt> {
     lexer.assert_token_kind('=' as i32);
     lexer.eat(); // eat '='
     match parse_expr(lexer) {
-        Some(x) => Some(Stmt::VarAssign(
-            VarAssignStmt::new(name, var_type, x, mutable))),
+        Some(x) => Some(Stmt::VarAssign(VarAssignStmt::new(name, var_type, x, mutable))),
+        None => {lexer.error("invalid expr".to_string(), None); None},
+    }
+}
+
+fn try_parse_var_mut(lexer: &mut Lexer, name: &String) -> Option<Stmt> {
+    if !lexer.is_token_kind('=' as i32) {return None;}
+    lexer.eat(); // eat '='
+    match parse_expr(lexer) {
+        Some(x) => Some(Stmt::VarMut(VarMutStmt::new(name.clone(), x))),
         None => {lexer.error("invalid expr".to_string(), None); None},
     }
 }
@@ -315,16 +328,14 @@ fn parse_fun_def(lexer: &mut Lexer) -> Option<Stmt> {
     lexer.assert_token_kind(lexer::TOK_FN);
     lexer.eat(); // eat fn
     lexer.assert_token_kind(lexer::TOK_IDEN);
-    let name: String = lexer.front()
-        .get_str_val().unwrap().to_string();
+    let name: String = lexer.front().get_str_val().unwrap().to_string();
     lexer.eat(); // eat name
     lexer.assert_token_kind('(' as i32);
     lexer.eat(); // eat '('
     let mut args: Vec<Arg> = Vec::new();
     while !lexer.empty() && !lexer.is_token_kind(')' as i32) {
         lexer.assert_token_kind(lexer::TOK_IDEN);
-        let arg_name: String = lexer.front()
-            .get_str_val().unwrap().to_string();
+        let arg_name: String = lexer.front().get_str_val().unwrap().to_string();
         lexer.eat(); // eat arg_name
         lexer.assert_token_kind(':' as i32);
         lexer.eat(); // eat ':'

@@ -1,5 +1,5 @@
 use std::{fs::File, io::Write, collections::HashMap};
-use crate::fe::stmt::{Stmt, CFStmt, VarAssignStmt, IfStmt, Type, Block};
+use crate::fe::stmt::{Stmt, CFStmt, VarAssignStmt, VarMutStmt, IfStmt, Type, Block};
 use crate::fe::expr::{Expr, CallExpr, BinExpr};
 use crate::fe::lexer::{TOK_GT, TOK_LT, TOK_GE, TOK_LE, TOK_EQ, TOK_NE};
 use crate::compiler_felf64::native_api::{is_native_api, compile_api};
@@ -90,7 +90,7 @@ fn compile_var_assign(var_assign: &VarAssignStmt, asm: &mut Asm, ctx: &mut Conte
                 format!("L{}:", label_count),
                 format!("\tdb `{}`, 0", text)
             ]);
-            ctx.vars.insert(var_assign.name.clone(), Var::new(offset, size, Type::Bool));
+            ctx.vars.insert(var_assign.name.clone(), Var::new(offset, size, Type::Str));
             ctx.inc_bp_offset(size);
         },
         Expr::Bin(_) => {
@@ -113,6 +113,12 @@ fn compile_expr(expr: &Expr, asm: &mut Asm, ctx: &mut Context) {
     };
 }
 
+fn compile_var_mut(var_mut: &VarMutStmt, asm: &mut Asm, ctx: &mut Context) {
+    let var_eval = access_expr_val(&Expr::Var(var_mut.name.clone()), asm, ctx);
+    let expr_eval = access_expr_val(&var_mut.expr, asm, ctx);
+    asm.text.push(format!("\tmov {}, {}", var_eval, expr_eval));
+}
+
 fn compile_block(block: &Block, asm: &mut Asm, ctx: &mut Context) {
     for stmt in block.stmts.iter() {compile(stmt, asm, ctx);}
 }
@@ -120,7 +126,14 @@ fn compile_block(block: &Block, asm: &mut Asm, ctx: &mut Context) {
 pub fn access_expr_val(expr: &Expr, asm: &mut Asm, ctx: &mut Context) -> String {
     match expr {
         Expr::Int(num) => num.to_string(),
-        Expr::Str(text) => text.to_string(),
+        Expr::Str(text) => {
+            let label_count = asm.get_and_inc();
+            asm.data.extend(vec![
+                format!("L{}:", label_count),
+                format!("\tdb `{}`, 0", text),
+            ]);
+            format!("L{}", label_count)
+        },
         Expr::Bool(val) => if *val {"1".to_string()} else {"0".to_string()},
         Expr::Var(name) => {
             let var = ctx.vars.get(name).unwrap();
@@ -214,6 +227,7 @@ fn compile(stmt: &Stmt, asm: &mut Asm, ctx: &mut Context) {
         Stmt::VarAssign(x) => compile_var_assign(x, asm, ctx),
         Stmt::ExprStmt(x) => compile_expr(x, asm, ctx),
         Stmt::If(x) => compile_if(x, asm, ctx),
+        Stmt::VarMut(x) => compile_var_mut(x, asm, ctx),
         _ => todo!("Not yet implemented"),
     };
 }

@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 use crate::fe::expr::{Expr, CallExpr, BinExpr};
-use crate::fe::stmt::{VarAssignStmt, IfStmt, Stmt, Block, Arg, Type};
+use crate::fe::stmt::{VarAssignStmt, VarMutStmt, IfStmt, Stmt, Block, Arg, Type};
 use crate::fe::lexer::{TOK_COMP_LOW, TOK_COMP_HIGH};
 use crate::mw::native_api::get_native_apis;
 use crate::utils::{error, assert};
@@ -79,8 +79,7 @@ fn get_expr_type(expr: &Expr, ctx: &Context) -> Type {
 
 fn validate_type_with_expr(expr_type: &Type, expr: &Expr, ctx: &Context) {
     let type_found: Type = get_expr_type(expr, ctx);
-    assert(expr_type == &type_found,
-           format!("expected type {} found {}", expr_type, type_found));
+    assert(expr_type == &type_found, format!("expected type {} found {}", expr_type, type_found));
 }
 
 fn validate_var_assign_stmt(stmt: &VarAssignStmt, ctx: &mut Context) {
@@ -91,8 +90,7 @@ fn validate_var_assign_stmt(stmt: &VarAssignStmt, ctx: &mut Context) {
 fn validate_fun_call(call: &CallExpr, ctx: &Context) {
     match ctx.funs.get(&call.name) {
 	    Some(fun) => {
-            assert(fun.args.len() == call.args.len(),
-                   String::from("arguments size mismatch"));
+            assert(fun.args.len() == call.args.len(), "arguments size mismatch".to_string());
             for i in 0..fun.args.len() {
 		        validate_type_with_expr(&fun.args[i].arg_type, &call.args[i], ctx);
 	        }
@@ -124,11 +122,27 @@ fn validate_if_stmt(if_stmt: &IfStmt, ctx: &Context) {
     }
 }
 
+fn validate_var_mut(var_mut_stmt: &VarMutStmt, ctx: &mut Context) {
+    let var: Var = match ctx.vars.get(&var_mut_stmt.name) {
+        Some(x) => x.clone(),
+        None => {
+            error(format!("variable {} not found", var_mut_stmt.name));
+            unreachable!()
+        },
+    };
+    if !var.mutable {
+        error(format!("variable {} is not mutable, either mark it mutable or re-initialize the variable",
+                      var_mut_stmt.name));
+    }
+    validate_type_with_expr(&var.expr_type, &var_mut_stmt.expr, ctx);
+}
+
 fn validate_stmt(stmt: &Stmt, ctx: &mut Context) {
     match stmt {
 	    Stmt::VarAssign(x) => validate_var_assign_stmt(x, ctx),
         Stmt::ExprStmt(x) => validate_expr(x, ctx),
         Stmt::If(x) => validate_if_stmt(x, ctx),
+        Stmt::VarMut(x) => validate_var_mut(x, ctx),
         _ => {},
     }
 }
