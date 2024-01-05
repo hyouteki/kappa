@@ -6,6 +6,7 @@
 - [x] If Stmt
 - [x] Top Level Function-Calls 
 - [x] Integer Binary Expressions
+- [x] Variable Mutation
 - [ ] While Statement
 - [ ] Control Flow Statement
 - [ ] Function Defination
