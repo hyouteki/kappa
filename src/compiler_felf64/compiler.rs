@@ -21,6 +21,8 @@ pub struct Var {
 
 #[derive(Clone)]
 pub struct Context {
+    pub break_label: String,
+    pub continue_label: String,
     pub cur_bp_offset: u32,
     pub vars: HashMap<String, Var>,
 }
@@ -33,7 +35,8 @@ impl Var {
 
 impl Context {
     fn new() -> Self {
-        Context{cur_bp_offset: 0, vars: HashMap::new()}
+        Context{break_label: "".to_string(), continue_label: "".to_string(),
+                cur_bp_offset: 0, vars: HashMap::new()}
     }
     fn inc_bp_offset(&mut self, size: u32) {
         self.cur_bp_offset += size;
@@ -249,6 +252,8 @@ fn compile_while(while_stmt: &WhileStmt, asm: &mut Asm, ctx: &mut Context) {
         Expr::Bool(val) => {
             if *val {
                 let mut block_ctx = ctx.clone();
+                block_ctx.break_label = final_label.clone();
+                block_ctx.continue_label = while_label.clone();
                 compile_block(&while_stmt.block, asm, &mut block_ctx);
                 asm.text.push(format!("\tjmp {}", while_label));
             } else {asm.text.push(format!("\tjmp {}", final_label));}
@@ -266,12 +271,22 @@ fn compile_while(while_stmt: &WhileStmt, asm: &mut Asm, ctx: &mut Context) {
             }.to_string();
             asm.text.push(format!("\t{} {}", cond_jmp, final_label));
             let mut block_ctx = ctx.clone();
+            block_ctx.break_label = final_label.clone();
+            block_ctx.continue_label = while_label.clone();
             compile_block(&while_stmt.block, asm, &mut block_ctx);
             asm.text.push(format!("\tjmp {}", while_label));
         }
         _ => unreachable!(),
     };
     asm.text.push(format!("{}:", final_label));
+}
+
+fn compile_cf(cf_stmt: &CFStmt, asm: &mut Asm, ctx: &mut Context) {
+    match cf_stmt {
+        CFStmt::Return(expr) => todo!("TODO: cf_stmt::Return(expr)"),
+        CFStmt::Break => asm.text.push(format!("\tjmp {}", ctx.break_label)),
+        CFStmt::Continue => asm.text.push(format!("\tjmp {}", ctx.continue_label)),
+    };
 }
 
 fn compile(stmt: &Stmt, asm: &mut Asm, ctx: &mut Context) {
@@ -281,6 +296,7 @@ fn compile(stmt: &Stmt, asm: &mut Asm, ctx: &mut Context) {
         Stmt::If(x) => compile_if(x, asm, ctx),
         Stmt::VarMut(x) => compile_var_mut(x, asm, ctx),
         Stmt::While(x) => compile_while(x, asm, ctx),
+        Stmt::CF(x) => compile_cf(x, asm, ctx),
         _ => todo!("Not yet implemented"),
     };
 }

@@ -243,6 +243,14 @@ pub fn parse_stmt(lexer: &mut Lexer) -> Option<Stmt> {
             lexer.eat(); // eat ';'
             None
         }
+        lexer::TOK_BREAK => {
+            lexer.eat(); // eat break
+            Some(Stmt::CF(CFStmt::Break))
+        },
+        lexer::TOK_CONTINUE => {
+            lexer.eat(); // eat continue
+            Some(Stmt::CF(CFStmt::Continue))
+        },
         _ => match parse_expr(lexer) {
             Some(expr) => match expr {
                 Expr::Var(name) => match try_parse_var_mut(lexer, &name) {

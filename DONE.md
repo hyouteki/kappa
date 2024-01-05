@@ -9,4 +9,8 @@
 - [x] Variable Mutation
 - [x] While Statement
 - [ ] Control Flow Statement
+  - [ ] Validation 
+  - [x] Break
+  - [x] Continue
+  - [ ] Return
 - [ ] Function Defination
