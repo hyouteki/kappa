@@ -7,6 +7,6 @@
 - [x] Top Level Function-Calls 
 - [x] Integer Binary Expressions
 - [x] Variable Mutation
-- [ ] While Statement
+- [x] While Statement
 - [ ] Control Flow Statement
 - [ ] Function Defination
