@@ -1,4 +1,4 @@
-use std::{fmt, collections::HashMap};
+use std::fmt;
 use crate::fe::expr::{Expr, parse_expr};
 use crate::fe::lexer::{self, Lexer, token_kind_to_str};
 
@@ -191,7 +191,6 @@ impl fmt::Display for Stmt {
             Stmt::If(x) => write!(f, "{}", x),
             Stmt::CF(x) => write!(f, "{}", x),
             Stmt::While(x) => write!(f, "{}", x),
-            _ => todo!("Not yet implemented"),
         }        
     }
 }

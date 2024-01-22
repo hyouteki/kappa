@@ -1,7 +1,7 @@
-use std::{process::exit, collections::HashSet};
+use std::collections::HashSet;
 use crate::fe::expr::{Expr, CallExpr};
-use crate::compiler_felf64::compiler::{Asm, Var, Context, access_expr_val};
-use crate::utils::{error, assert, strlen};
+use crate::compiler_felf64::compiler::{Asm, Context, access_expr_val};
+use crate::utils::strlen;
 
 fn rbx_or_ebx(value: &String) -> String {
     if value.starts_with("DWORD") {"ebx".to_string()}

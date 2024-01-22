@@ -1,6 +1,6 @@
 use std::{fs::File, io::Write, collections::HashMap};
 use crate::fe::stmt::{Stmt, CFStmt, VarAssignStmt, VarMutStmt, IfStmt, WhileStmt, Type, Block};
-use crate::fe::expr::{Expr, CallExpr, BinExpr};
+use crate::fe::expr::{Expr, CallExpr};
 use crate::fe::lexer::{TOK_GT, TOK_LT, TOK_GE, TOK_LE, TOK_EQ, TOK_NE};
 use crate::compiler_felf64::native_api::{is_native_api, compile_api};
 use crate::utils::{error, strlen};
@@ -283,7 +283,7 @@ fn compile_while(while_stmt: &WhileStmt, asm: &mut Asm, ctx: &mut Context) {
 
 fn compile_cf(cf_stmt: &CFStmt, asm: &mut Asm, ctx: &mut Context) {
     match cf_stmt {
-        CFStmt::Return(expr) => todo!("TODO: cf_stmt::Return(expr)"),
+        CFStmt::Return(_) => todo!("TODO: cf_stmt::Return(expr)"),
         CFStmt::Break => asm.text.push(format!("\tjmp {}", ctx.break_label)),
         CFStmt::Continue => asm.text.push(format!("\tjmp {}", ctx.continue_label)),
     };

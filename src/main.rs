@@ -8,7 +8,7 @@ pub mod mw;
 pub mod utils;
 
 use fe::{lexer::Lexer, parser::parse_lexer, stmt::Stmt};
-use mw::validator::validator;
+use mw::middleware;
 use transpiler_cpp::transpiler;
 use compiler_felf64::compiler::compiler;
 
@@ -63,14 +63,18 @@ fn main() {
     let content: Vec<String> = get_content(&filepath);
     let mut lexer: Lexer = Lexer::new(content, filepath.to_string());
     lexer.print();
-    let stmts: Vec<Stmt> = parse_lexer(&mut lexer);
+    let mut stmts: Vec<Stmt> = parse_lexer(&mut lexer);
     println!("");
     for stmt in stmts.iter() {
         println!("{}", stmt);
     }
     println!("");
-    validator(&stmts);
-    let filename = filepath[..filepath.len()-1].to_string();
+    middleware(&mut stmts);
+	for stmt in stmts.iter() {
+        println!("{}", stmt);
+    }
+    println!("");
+	let filename = filepath[..filepath.len()-1].to_string();
     if cpp {transpiler(filename.clone()+&"cpp", &stmts);}
     if felf {compiler(filename.clone()+&"asm", &stmts);}
 }

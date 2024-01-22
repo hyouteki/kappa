@@ -1,17 +1,20 @@
 use std::fmt;
 use crate::fe::lexer::{self, Lexer};
 
+#[derive(Clone)]
 pub struct BinExpr {
     pub lhs: Expr,
     pub op: i32,
     pub rhs: Expr,
 }
 
+#[derive(Clone)]
 pub struct CallExpr {
     pub name: String,
     pub args: Vec<Expr>,
 }
 
+#[derive(Clone)]
 pub enum Expr {
     Str(String),
     Int(i32),
@@ -124,7 +127,7 @@ pub fn parse_paren_expr(lexer: &mut Lexer) -> Option<Expr> {
 }
 
 // reference: https://llvm.org/docs/tutorial/MyFirstLanguageFrontend/LangImpl02.html
-pub fn parse_bin_rhs(lexer: &mut Lexer, cur_prec: i32, lhs: Expr) -> Option<Expr> {
+pub fn parse_bin_rhs(lexer: &mut Lexer, _cur_prec: i32, lhs: Expr) -> Option<Expr> {
     loop {
         if lexer.empty() {return Some(lhs);}
         let bin_op: i32 = lexer.front().kind;

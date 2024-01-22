@@ -1,5 +1,5 @@
 use std::collections::HashMap;
-use crate::fe::expr::{Expr, CallExpr, BinExpr};
+use crate::fe::expr::{Expr, CallExpr};
 use crate::fe::stmt::{VarAssignStmt, VarMutStmt, WhileStmt, IfStmt, Stmt, Block, Arg, Type};
 use crate::fe::lexer::{TOK_COMP_LOW, TOK_COMP_HIGH};
 use crate::mw::native_api::get_native_apis;
